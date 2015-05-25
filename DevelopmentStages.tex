@@ -1,0 +1,51 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[margin=0.8in]{geometry}
+%\usepackage[T1]{fontenc}
+%\usepackage{babel}
+%\setcounter{section}{6}
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.5}
+\usepackage{url}
+
+\author{
+  Babbar, Abhimanyu\\
+  \textsc{890729-7751}\\
+  \texttt{babbar@kth.se}
+}
+\title{Development Stages} 
+
+\begin{document}
+
+\maketitle 
+
+
+
+\section*{Developmental Stages}
+
+\begin{enumerate}
+
+\item \textbf{Stage 1}: First stage will be updating the Index Entry Structure to include the epochs and leader id as additional meta data to capture to help create dense spaces which will help during the partitioning merge. This change will require a change in the Lowest Missing Index Tracker mechanism.
+
+\item \textbf{Stage 2}: Next stage will involve making changes to the  Partitioning Mechanism. The median entry will be calculated by the leader and all the nodes will require to fetch the partitioning packet information and based on the area in which they lie, they would need to remove the other half. 
+
+\item \textbf{Stage 3}: This  stage will involve testing of the system with the changes made in the previous stages and verifying that it works correctly.
+
+\item \textbf{Stage 4}: Stage Four will include introducing the Partition Aware Gradient in the system. This will be the trickiest of all as if not implemented properly can lead to isolated nodes and unwanted leaders due to artificial network partition detection.
+
+\end{enumerate}
+
+
+
+\section*{Milestones}
+
+Above Stages which probably contain multiple developmental stages within themselves can be broadly divided in two major milestones.
+
+\begin{itemize}
+
+\item \textbf{Creating Dense Spaces.}
+
+\item \textbf{Partition Aware Gradient (PAG)}
+
+\end{itemize}
+
+\end{document}
