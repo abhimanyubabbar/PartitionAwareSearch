@@ -1,3 +1,7 @@
 *.gz
 *.log
+*.idea/*
+*.aux
+*.pdf
+
 
