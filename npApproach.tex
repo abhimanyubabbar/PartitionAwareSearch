@@ -20,7 +20,7 @@
 
 \section{Introduction}
 
-Structured overlay networks form basis for the majority of the distrubuted systems. They are popular for there ability to stabalize and handle churns in the network. In case the system is long lived, there is a chance of network partitioning happening. For the structured overlay networks given there generic nature, the case of network partitioning is another case of churn in the system. The case of cleaning up of the nodes is handled just like churn management. \\
+Structured overlay networks form basis for the majority of the distributed systems. They are popular for there ability to stabilize and handle churns in the network. In case the system is long lived, there is a chance of network partitioning happening. For the structured overlay networks given there generic nature, the case of network partitioning is another case of churn in the system. The case of cleaning up of the nodes is handled just like churn management. \\
 
 
 
@@ -62,7 +62,7 @@ The section deals with the solution used for detecting and healing the network p
 The entry is uniquely identified by \textbf{epoch, leaderid, entry number}. So this means that the entries in same epoch in two different network partitions can be identified uniquely as the leader will be in either one of the partitions and therefore a total order can be established.
 
 
-\subsubsection{Epoch Update History} In order to keep track of the event of the healing of the network partitioning, we need to store the Epoch Updates as it will be used to compare the histories of two nodes and determine the case of network partitioning. A node whenever it becomes a leader it pushes a landing entry commit in the leader group which creates a mark in the continously evolving timeline of the entry commits for the nodes.
+\subsubsection{Epoch Update History} In order to keep track of the event of the healing of the network partitioning, we need to store the Epoch Updates as it will be used to compare the histories of two nodes and determine the case of network partitioning. A node whenever it becomes a leader it pushes a landing entry commit in the leader group which creates a mark in the continuously evolving time line of the entry commits for the nodes.
 
 
 \subsubsection{Partition Aware Gradient} The partition aware gradient is a wrapper over the gradient component which will filter the samples that the gradient receives from the croupier, gradient exchanges between themselves and also send above to the application.
@@ -70,7 +70,7 @@ The entry is uniquely identified by \textbf{epoch, leaderid, entry number}. So t
 
 
 \subsection{Solution Description}
-In order to better understand the soution, we will go through the normal functioning of the system and the procedure that needs to be followed by the nodes in order to make sure that the merging process of network partitioning goes smoothly.
+In order to better understand the solution, we will go through the normal functioning of the system and the procedure that needs to be followed by the nodes in order to make sure that the merging process of network partitioning goes smoothly.
 
 \subsubsection{Epoch Updates}
 
@@ -109,9 +109,53 @@ allow the nodes that are ahead in the partitioning depth but if reached at that 
 The pulling node decides who to pull from and they should be nodes who's history is an \textbf{extension} of the node's history.
 
 
-\item Once you have the epoch update, based on the information contained inside the update, the index pull mechanism starts asking for the entries from the nodes above them. The node swiches to the pulling the next epoch update only onces it closes the current epoch update.
+\item Once you have the epoch update, based on the information contained inside the update, the index pull mechanism starts asking for the entries from the nodes above them. The node switches to the pulling the next epoch update only onces it closes the current epoch update.
 
 \end{enumerate}
+
+
+
+\section{Gradient}
+
+The next stage of changes need to be made in the gradient in order to make it partition aware. The tough part is the visualization of the solution and to make it work in a generic way.
+
+We need to examine the problem carefully and construct a solution for blocking the gradient. The blocking part is hard because if the solution is not correct then we can have many false positives being generated and in order to prevent that we need to come up with a good strategy.
+
+
+When the branches start to merge back, the bigger node detects the lower node, that is the node with lower utility. Once the detection is done, the higher node contacts the lower node about a potential merge and forces it to give up the leadership.There are several cases that can occur and therefore needs to be handled. The simple approach of detecting the network partition from the nodes higher in  the history is kind of problematic and therefore the solution for the short lived partition needs to be figured out.
+
+\begin{enumerate}
+
+\item The node that is behind in the leader unit status, will exchange with anyone having the leader unit ahead of him as he is not sure that if he is lagging behind or simply a case of network partition. 
+
+\item If a node as part of Request and Response for the Gradient shuffle will check that if the self leader unit is ahead of the other one and then check if the leader unit is in the history or not. In case the leader unit is absent then he will not reply or incorporate the response to the node. The node should add the node in a list of suspected nodes that should be periodically handed over to the application. 
+
+\end{enumerate}
+
+\subsection{Special Scenarios}
+
+Although the above solution looks good, there are many scenarios that needs explanation on the basis of the above mentioned solution.
+
+\subsubsection{Short Lived Partition}
+In case the partition is short lived, the nodes might still be having a reference of the nodes that went into another partition. Therefore in case a new leader in another partition is not elected then everything is fine and it seamlessly merges back in.\\
+
+The problem starts when the leader is elected and therefore the nodes receive a new leader unit update with the new updated epoch. The PAG should always receive from the application the last leader unit that they have just pulled from the nodes above in the system.
+
+\subsubsection{General Partition Detection}
+This section determines a general partition detection by the nodes in the system. The two processes that needs to be monitored are:
+
+\begin{enumerate}
+
+\item Data Push from the Croupier.
+\item Request / Response Exchange by the Gradient.
+
+\end{enumerate}
+
+On every descriptor of the neighbor that the croupier tries to send to the system, check for the last leader update that is seen by the descriptor. What about old and stale descriptors in system ?
+
+Somehow the information needs to be propagated to the leaders about the potential partition merge. How to do that because whoever the leader gives up the leadership to a better node should have the same last epoch as the leader right. So that wouldn't happen and therefore it can see it as a partition merge. So the condition should be somehow that the leader group of the other system should not die unexpectedly or even if it dies then the other nodes should take it place therefore the nodes should not pollute the history of leader units by starting to merge with other nodes.
+
+Now we know that we should not include the nodes that are potential suspect of polluting the epoch history. The simple working would be that the node that is performing an exchange with you through gradient shuffle request or response, you always look at the descriptor of the source of message and then check if the last leader unit represented in it is contained in the history. In case a match is found then yeah this node looks good and reply back. In case a node is not able to find the leader unit in its history it adds it to the suspected list and pushes upward to the application. This along with a few more checks needs to be performed by a node which is \textbf{ahead in the leader history}. In case a receiving nodes history is not contained in the self leader unit history, what to do ?
 
 
 
@@ -128,7 +172,7 @@ The node will pull this information as part of epoch update and once it sees the
 
 \item Explain the process of network partitioning merge, how the entries will  be transferred and nodes fetch the data from the above nodes ?
 
-During the gradient exchange, every node descriptor also contains the information regarding the current epoch update and therefore when a node sees some nodes that are either below or above it and the hostories have diverged then it triggers an event to the application with the set of nodes saying that there seems to be a network partition merging back in and therefore allow the application to process the update. The application in turn can try to locate the leader of its own partition and inform it about a potential network partition merge.
+During the gradient exchange, every node descriptor also contains the information regarding the current epoch update and therefore when a node sees some nodes that are either below or above it and the histories have diverged then it triggers an event to the application with the set of nodes saying that there seems to be a network partition merging back in and therefore allow the application to process the update. The application in turn can try to locate the leader of its own partition and inform it about a potential network partition merge.
 
 
 \item What about very short lived partition, where the epoch history difference might be very less ?
