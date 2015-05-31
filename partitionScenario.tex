@@ -1,0 +1,57 @@
+\documentclass[a4paper, 11pt]{article}
+\usepackage[margin=0.8in]{geometry}
+%\usepackage[T1]{fontenc}
+%\usepackage{babel}
+%\setcounter{section}{6}
+\setlength{\tabcolsep}{8pt}
+\renewcommand{\arraystretch}{1.5}
+\usepackage{url}
+
+\author{
+  Babbar, Abhimanyu\\
+  \textsc{890729-7751}\\
+  \texttt{babbar@kth.se}
+}
+\title{Network Partition Scenarios} 
+
+\begin{document}
+
+\maketitle 
+
+\section{Scenarios}
+Analysis of the different Network Partition Scenarios and there potential solutions.
+
+\subsection{Short Lived Partition}
+The basic and a very frequent scenario that would occur would be that for a very short duration of time, a set of nodes gets networked partitioned. The duration is small enough so that the nodes that got partitioned \textbf{are unable to elect a new leader}.\\
+
+\textbf{Solution}: The nodes simply merge back without any hiccups and start working as before and fetch the entries if any that could have been added in that short duration.
+
+
+\subsection{General Network Partition Without Sharding}
+The main case that needs to be handled as part of thesis scope is that nodes gets networked partitioned for a medium to long duration of time but the partition heals before any set of nodes reaches the sharding stage. The set of nodes act independently and the nodes which got separated from the leader, thinks that the leader is dead and therefore elects a new leader. Both the partitions keep moving forwards and there histories keep on evolving in terms of container switches. In the current scenario, there are several cases that can arise and need to be handled.\\
+
+
+But before we can visit the different cases, we need to look at solution that would be used to resolve the case of network partitioning. \\
+
+\textbf{General Solution}: The descriptor that contains a subset of information about the nodes is exchanged by the nodes with others in the system. The information needs to be augmented with the \textit{Last Leader Unit} that the node has seen when exchanging the information in the system. This information will be used by the other node to check if the unit is contained in the \textit{ History} which is the sorted list of the unit updates that has been seen by that particular node. Every node maintains a local history of the leader unit updates. 
+
+In case the leader unit is not found in the history, the node is marked as a suspected node and handed over to the application for further investigation. The case of finding a node in the leader history also needs to be expanded. Below are cases that could occur between the exchange between nodes A and B.
+
+
+\begin{enumerate}
+
+\item Both nodes have same last leader unit in there respective histories. 
+
+\item One of the nodes is ahead in the history and the other node's last leader unit is present in the history of the former one.
+
+\item One of the nodes is ahead in the history but it does not contain the leader unit provided by the other node in its local history.
+
+\end{enumerate}
+
+
+The steps that the node will vary based on the scenario that the node is operating under.
+
+
+
+
+\end{document}

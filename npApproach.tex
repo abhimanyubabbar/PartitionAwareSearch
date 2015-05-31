@@ -121,7 +121,6 @@ The next stage of changes need to be made in the gradient in order to make it pa
 
 We need to examine the problem carefully and construct a solution for blocking the gradient. The blocking part is hard because if the solution is not correct then we can have many false positives being generated and in order to prevent that we need to come up with a good strategy.
 
-
 When the branches start to merge back, the bigger node detects the lower node, that is the node with lower utility. Once the detection is done, the higher node contacts the lower node about a potential merge and forces it to give up the leadership.There are several cases that can occur and therefore needs to be handled. The simple approach of detecting the network partition from the nodes higher in  the history is kind of problematic and therefore the solution for the short lived partition needs to be figured out.
 
 \begin{enumerate}
@@ -155,7 +154,12 @@ On every descriptor of the neighbor that the croupier tries to send to the syste
 
 Somehow the information needs to be propagated to the leaders about the potential partition merge. How to do that because whoever the leader gives up the leadership to a better node should have the same last epoch as the leader right. So that wouldn't happen and therefore it can see it as a partition merge. So the condition should be somehow that the leader group of the other system should not die unexpectedly or even if it dies then the other nodes should take it place therefore the nodes should not pollute the history of leader units by starting to merge with other nodes.
 
-Now we know that we should not include the nodes that are potential suspect of polluting the epoch history. The simple working would be that the node that is performing an exchange with you through gradient shuffle request or response, you always look at the descriptor of the source of message and then check if the last leader unit represented in it is contained in the history. In case a match is found then yeah this node looks good and reply back. In case a node is not able to find the leader unit in its history it adds it to the suspected list and pushes upward to the application. This along with a few more checks needs to be performed by a node which is \textbf{ahead in the leader history}. In case a receiving nodes history is not contained in the self leader unit history, what to do ?
+Now we know that we should not include the nodes that are potential suspect of polluting the epoch history. The simple working would be that the node that is performing an exchange with you through gradient shuffle request or response, you always look at the descriptor of the source of message and then check if the last leader unit represented in it is contained in the history. In case a match is found then yeah this node looks good and reply back. In case a node is not able to find the leader unit in its history it adds it to the suspected list and pushes upward to the application. This along with a few more checks needs to be performed by a node which is \textbf{ahead in the leader history}. In case a receiving nodes history is not contained in the self leader unit history, what to do ?\\
+
+The node whoever has a small leader unit history even though the \textbf{utility might be high} is at a disadvantage because it is unable to distinguish between the nodes with more leader unit history in the system because they just don't know yet if they are missing on something and if they should act now or keep on waiting till they hopefully receive the updates.\\
+
+\textbf{Potential Solution:} The node while exchanging data with any node higher in the history should first ask the node that hey, do I lie in your history if yes, then proceed else mark the node as suspect and push to the application, else proceed to communicate. If the node is at the same level as you are then simply proceed. 
+(\textit{That would create issue in case of short lived partition.}). The approach that could be followed is that try to bring the node towards a particular branch as quickly as possible. 
 
 
 
