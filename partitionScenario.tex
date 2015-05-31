@@ -49,8 +49,47 @@ In case the leader unit is not found in the history, the node is marked as a sus
 \end{enumerate}
 
 
-The steps that the node will vary based on the scenario that the node is operating under.
+The steps that the node will take will vary based on the scenario that the node is operating under.\\
 
+
+\textbf{General Shuffle Scenario}: Let us assume there are two nodes A and B in the system. As part of periodic shuffle round, node A wakes up and generates its own descriptor based on the latest information available to the \textit{Partition Aware Gradient}. The node picks up a node to shuffle with based on its utitlity. The gradient component simply sends the shuffle request to the node. The message is then intercepted by the Partition Aware Gradient Component and this component decides whether to send the request forward or not:
+
+
+The partition aware gradient looks at the \textit{last leader unit} of the node in the request. Now two cases could arise :
+
+\begin{enumerate}
+
+\item Either the node is present in the history of the sending node and therefore the request is allowed to pass through.
+
+\item The node is unable to find the node's last leader unit in the history and thus puts the node in the suspected list and hands over the list to the application for further investigation. (This task could also be performed by the component itself but depends upon the data needs to be accessed for investigation.)
+
+
+\end{enumerate}
+
+
+\textbf{Questions}: Some questions based on the above scenario:
+
+\begin{enumerate}
+
+
+\item Is there a node that is truly ahead of another node ?
+
+\textbf{Ans)} The last leader unit that the node is at helps to determine if a node is ahead of another node but due to network partition merge there might be cases in which the nodes that are rising in the system are at the same epoch in terms of last leader units but having different leader id's in the leader unit.
+
+
+\item What happens if the Last Leader Unit of the descriptor that the node is trying to shuffle with is ahead of the node's self last leader unit ?
+
+\textbf{Ans)} It might be that the node be lagging behind on the updates and therefore haven't seen them yet or might be a case of network partition merge. So, I think it means that the \textit{Partition Aware Gradient} should only allow the nodes whose last leader unit is a subset of it's own history and in all the other cases should send it to the application for inspection. ( \textbf{ Not sure on this one }
+
+\item What are the steps that the Application needs to take ?
+
+\textbf{Ans)} Once the application receives the suspected list from the Partition Aware Gradient (PAG), the application needs to determine that the node is not from other partition and it is not a case of Partition Merge. The application initiates a verification mechanism in which based on the current last leader unit, sends a verification request to the node about the last leader unit, in sense that it asks the node that : \textit{ Hey I am not able to determine whether to shuffle with you or not as you are ahead, so do you see me in your history ?}
+
+In addition to this, what needs to happen in case the last leader unit of the node provided by the PAG is behind the current last leader unit and not in the history ?
+
+It can be a false positive as there might be a network partition merge going on and the node is a new node which has fetched the unit update from a node that has already received the partition merge update and incorporated the new units in its history. How does the application determine it's a case of false detection of partition merge. The leader intervention is required in this case ? ( \textit{ Does the node route the query upwards towards the leader with a predefined TTL ? } )
+
+\end{enumerate}
 
 
 
