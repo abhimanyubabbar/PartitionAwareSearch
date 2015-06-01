@@ -72,14 +72,32 @@ The partition aware gradient looks at the \textit{last leader unit} of the node 
 \begin{enumerate}
 
 
+
 \item Is there a node that is truly ahead of another node ?
 
 \textbf{Ans)} The last leader unit that the node is at helps to determine if a node is ahead of another node but due to network partition merge there might be cases in which the nodes that are rising in the system are at the same epoch in terms of last leader units but having different leader id's in the leader unit.
 
 
+
 \item What happens if the Last Leader Unit of the descriptor that the node is trying to shuffle with is ahead of the node's self last leader unit ?
 
-\textbf{Ans)} It might be that the node be lagging behind on the updates and therefore haven't seen them yet or might be a case of network partition merge. So, I think it means that the \textit{Partition Aware Gradient} should only allow the nodes whose last leader unit is a subset of it's own history and in all the other cases should send it to the application for inspection. ( \textbf{ Not sure on this one }
+\textbf{Ans)} It might be that the node be lagging behind on the updates and therefore haven't seen them yet or might be a case of network partition merge. So, I think it means that the \textit{Partition Aware Gradient} should only allow the nodes whose last leader unit is a subset of it's own history and in all the other cases should send it to the application for inspection. ( \textbf{ Not sure on this one } )
+
+
+
+
+\item How does the Partition Aware Gradient decides what to block and what to allow (\textit{information from the request/ response and the croupier data push}) ?
+
+\textbf{Ans)} The PAG needs to exert a tight control over the message exchange as part of Gradient shuffle and also the data coming from the croupier. The messages need to be intercepted and then the descriptor is analyzed by the PAG. In case a suspicious descriptor is found, the application is informed about the unverified node which can be a potential partition merge and therefore the PAG currently blocks it and waits for the application to come back to it about the nature of the unit update. 
+
+
+\item Can the PAG direct the gradient to remove a particular sample from the Gradient ?
+
+\textbf{Ans)} What happens to the sample in the gradient that the PAG refuses to shuffle with and drops the message. Can the PAG direct the gradient also to remove the node descriptor so that the gradient should not spread the sample to other nodes in the system ?
+
+\item How does the case of the Sharding differs from the case of partition merge in which the nodes from one branch are at the same level and the nodes in other branch have moved forward in terms of container switches and then the partition heals ?
+
+\textbf{Ans)} \textit{ Not sure on how to resolve this one }. Just one thing that comes to mind is that the application components of the nodes should have bulk of responsibility of deciding the nodes or better yet the leader units that are safe to shuffle with. In addition to this, the PAG check needs to be applied both at the request and the response phase of the protocol.
 
 \item What are the steps that the Application needs to take ?
 
@@ -90,6 +108,7 @@ In addition to this, what needs to happen in case the last leader unit of the no
 It can be a false positive as there might be a network partition merge going on and the node is a new node which has fetched the unit update from a node that has already received the partition merge update and incorporated the new units in its history. How does the application determine it's a case of false detection of partition merge. The leader intervention is required in this case ? ( \textit{ Does the node route the query upwards towards the leader with a predefined TTL ? } )
 
 \end{enumerate}
+
 
 
 
