@@ -21,10 +21,23 @@
 \section{Scenarios}
 Analysis of the different Network Partition Scenarios and there potential solutions.
 
-\subsection{Short Lived Partition}
+\subsection{Very Short Lived Partition}
 The basic and a very frequent scenario that would occur would be that for a very short duration of time, a set of nodes gets networked partitioned. The duration is small enough so that the nodes that got partitioned \textbf{are unable to elect a new leader}.\\
 
 \textbf{Solution}: The nodes simply merge back without any hiccups and start working as before and fetch the entries if any that could have been added in that short duration.
+
+
+\subsection{Short Lived Partition}
+A scenario in which the nodes partition in separate branches and diverge from a common point. The stale descriptors for some time will be present in the gradient and might be buffered in the communication maps of the application. In this, it might be possible that the other partition moves ahead and its leader unit history evolves but the partition heals before the application in the other branch is able to clean the partitioned nodes. \\
+
+\textbf{Solution}: The solution for this case will be tricky because the nodes will still contain stale samples from other nodes in the system and in case the partition heals without the samples being removed from the node the node will contact with the nodes. Therefore more tight control needs to be imposed on every message exchange in terms of introducing last leader unit in every exchange to prevent them to serve the data which does not belong to the current network partition. It will pollute the partition.
+
+\subsection{Medium Lived Partition without External Intervention}
+Scenario in which the nodes partition in separate branches but the time for which the nodes partition is large enough so that the samples became stale enough to be removed from the gradient. As gradient implements an age threshold mechanism which simply removes all the samples from the gradient which are above a certain age. In addition to this, we assume that the stale samples are present in croupier and therefore when the partition merges back in the croupier component communicates with the samples and when response is received, the samples start getting pushed to the gradient with low ages. The gradient then filters these samples and inform application about the partitioned nodes.
+
+\subsection{Medium Lived Partitioned With 3rd Party Intervention}
+In this scenario, \textit{caracal} is used as an arbitrator and nodes constantly ping the caracal for checking for the network partition. The system when getting network partitioned, one branch of the partitioned is unable to ping the caracal and detect it as a network partition. When assume that the stale descriptors are removed from application, gradient and croupier. Therefore on partition merge, the croupier needs to be bootstrapped with the nodes from other partition and this is place where caracal is useful as it provides the nodes from the other partition on heartbet response or separately when asked explicity.
+
 
 
 \subsection{General Network Partition Without Sharding}
