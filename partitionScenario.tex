@@ -124,5 +124,18 @@ It can be a false positive as there might be a network partition merge going on 
 
 
 
+\section{Special Cases}
+
+
+\subsection{Split Point Case} A very common scenario that could occur as part of Network Partitioning is that one of the partitioned branches (Ones that dont have the leader at which the partition occurs ), thinks that the leader is dead and therefore close the leader unit at the max entries based on the entries present in the new leader. The other branch could very well be continuing with the same leader unit and adding more entries in that unit and therefore  we have a unique case in which \textit{histories of both leader units} will contain the same leader unit but with different entries.
+
+In case the partition heals at the point at which the common leader unit is still on going in one of the leader units, this need to be handled correctly because the nodes when asking the last leader unit from the other nodes, they will have the unit in the history but the entries in that unit will be different. This can create issues in terms of entries being pulled by a particular node. \\
+
+\textbf{Solution}: The solution to this should be that there needs to be a checking between the current tracking id and the max entries of the leader unit being tracked. The node should always ask for the entries upto a maximum point in the request in the closing update has been received for the leader unit. 
+
+
+
+
+
 
 \end{document}
