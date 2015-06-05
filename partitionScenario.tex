@@ -36,7 +36,7 @@ A scenario in which the nodes partition in separate branches and diverge from a 
 Scenario in which the nodes partition in separate branches but the time for which the nodes partition is large enough so that the samples became stale enough to be removed from the gradient. As gradient implements an age threshold mechanism which simply removes all the samples from the gradient which are above a certain age. In addition to this, we assume that the stale samples are present in croupier and therefore when the partition merges back in the croupier component communicates with the samples and when response is received, the samples start getting pushed to the gradient with low ages. The gradient then filters these samples and inform application about the partitioned nodes.
 
 \subsection{Medium Lived Partitioned With 3rd Party Intervention}
-In this scenario, \textit{caracal} is used as an arbitrator and nodes constantly ping the caracal for checking for the network partition. The system when getting network partitioned, one branch of the partitioned is unable to ping the caracal and detect it as a network partition. When assume that the stale descriptors are removed from application, gradient and croupier. Therefore on partition merge, the croupier needs to be bootstrapped with the nodes from other partition and this is place where caracal is useful as it provides the nodes from the other partition on heartbet response or separately when asked explicity.
+In this scenario, \textit{caracal} is used as an arbitrator and nodes constantly ping the caracal for checking for the network partition. The system when getting network partitioned, one branch of the partitioned is unable to ping the caracal and detect it as a network partition. When assume that the stale descriptors are removed from application, gradient and croupier. Therefore on partition merge, the croupier needs to be bootstrapped with the nodes from other partition and this is place where caracal is useful as it provides the nodes from the other partition on heartbeat response or separately when asked explicitly.
 
 
 
@@ -65,7 +65,7 @@ In case the leader unit is not found in the history, the node is marked as a sus
 The steps that the node will take will vary based on the scenario that the node is operating under.\\
 
 
-\textbf{General Shuffle Scenario}: Let us assume there are two nodes A and B in the system. As part of periodic shuffle round, node A wakes up and generates its own descriptor based on the latest information available to the \textit{Partition Aware Gradient}. The node picks up a node to shuffle with based on its utitlity. The gradient component simply sends the shuffle request to the node. The message is then intercepted by the Partition Aware Gradient Component and this component decides whether to send the request forward or not:
+\textbf{General Shuffle Scenario}: Let us assume there are two nodes A and B in the system. As part of periodic shuffle round, node A wakes up and generates its own descriptor based on the latest information available to the \textit{Partition Aware Gradient}. The node picks up a node to shuffle with based on its utility. The gradient component simply sends the shuffle request to the node. The message is then intercepted by the Partition Aware Gradient Component and this component decides whether to send the request forward or not:
 
 
 The partition aware gradient looks at the \textit{last leader unit} of the node in the request. Now two cases could arise :
@@ -127,15 +127,16 @@ It can be a false positive as there might be a network partition merge going on 
 \section{Special Cases}
 
 
-\subsection{Split Point Case} A very common scenario that could occur as part of Network Partitioning is that one of the partitioned branches (Ones that dont have the leader at which the partition occurs ), thinks that the leader is dead and therefore close the leader unit at the max entries based on the entries present in the new leader. The other branch could very well be continuing with the same leader unit and adding more entries in that unit and therefore  we have a unique case in which \textit{histories of both leader units} will contain the same leader unit but with different entries.
+\subsection{Split Point Case} A very common scenario that could occur as part of Network Partitioning is that one of the partitioned branches (Ones that don't have the leader at which the partition occurs ), thinks that the leader is dead and therefore close the leader unit at the max entries based on the entries present in the new leader. The other branch could very well be continuing with the same leader unit and adding more entries in that unit and therefore  we have a unique case in which \textit{histories of both leader units} will contain the same leader unit but with different entries.
 
 In case the partition heals at the point at which the common leader unit is still on going in one of the leader units, this need to be handled correctly because the nodes when asking the last leader unit from the other nodes, they will have the unit in the history but the entries in that unit will be different. This can create issues in terms of entries being pulled by a particular node. \\
 
-\textbf{Solution}: The solution to this should be that there needs to be a checking between the current tracking id and the max entries of the leader unit being tracked. The node should always ask for the entries upto a maximum point in the request in the closing update has been received for the leader unit. 
+\textbf{Solution}: The solution to this should be that there needs to be a checking between the current tracking id and the max entries of the leader unit being tracked. The node should always ask for the entries up-to a maximum point in the request in the closing update has been received for the leader unit. 
 
+\subsection{Buffered Leader Unit} The case of buffered leader units is kind of tricky to understand. It is important to fully understand the premise because we need to solve it correctly. A node in the system usually buffers the updates when he is lagging in the leader unit pull in a current partition. In this case it might be possible that the node becomes a part of leader group due to churn. Therefore we might see jumps in the leader unit history which leads to the buffering of updates. A node which is simply lagging behind and pulling the updates from the nodes nearby will always get the updates in order and therefore the case of buffered updates will not occur.
 
+In case the updates being pulled through the control mechanism fill a jump, we need to check for the next epoch updates from buffered ones and therefore apply them in order. It is because the buffered updates are important and needed as these updates might be necessary for the nodes in the current partition as the nodes that buffered them might be the only ones except leader to add them and therefore it is necessary to keep them buffered. \textit { They are necessary for the liveness condition of the system. }
 
-
-
+While adding the buffered updates we must take care of the sharding update and empty the buffered unit list when the sharding update is successfully processed by the system. Because the nodes are concerned about the current shard and if they have buffered entries from shard ahead, it means that data is already replicated in the shard and therefore we can again pull once we have sharded. 
 
 \end{document}
