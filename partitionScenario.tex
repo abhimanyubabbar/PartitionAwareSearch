@@ -139,4 +139,17 @@ In case the updates being pulled through the control mechanism fill a jump, we n
 
 While adding the buffered updates we must take care of the sharding update and empty the buffered unit list when the sharding update is successfully processed by the system. Because the nodes are concerned about the current shard and if they have buffered entries from shard ahead, it means that data is already replicated in the shard and therefore we can again pull once we have sharded. 
 
+
+\subsection{Partition Aware Gradient}
+The PAG needs to be constructed carefully as there might be a lot of cases in which can result in inconsistent state. Some of the considerations are as follows:
+
+\begin{enumerate}
+
+\item The node needs to keep a buffered list of verified and suspected nodes. The list should always be cleared when a new last leader unit is received because the node which might be a current extension based on latest leader unit, might not be for the next leader unit switch and therefore needs to be taken care of by completely emptying the verfied list. Suspected ones need not to be cleared as the node always move forward in the system and if a current node is not a logical extension then it is very likely that it will not be later onewards also.
+
+
+
+\end{enumerate}
+
+
 \end{document}
