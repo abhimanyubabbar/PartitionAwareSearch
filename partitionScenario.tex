@@ -148,6 +148,15 @@ The PAG needs to be constructed carefully as there might be a lot of cases in wh
 \item The node needs to keep a buffered list of verified and suspected nodes. The list should always be cleared when a new last leader unit is received because the node which might be a current extension based on latest leader unit, might not be for the next leader unit switch and therefore needs to be taken care of by completely emptying the verfied list. Suspected ones need not to be cleared as the node always move forward in the system and if a current node is not a logical extension then it is very likely that it will not be later onewards also.
 
 
+\item In every croupier push or gradient shuffle request, we initially block the request. We first run it through the verified list and then in case it is still a suspect, based on the supplied last leader unit, we either send it to the application or to the component that tried to shuffle. We simply ask, \textit{Hey, do you think this unit is in my history or do you see my last leader unit in your history ?}. In case the response is affirmative, we add it to the verified list and buffer it. It addition to this, we also need to store the original request and trigger it to the application in case of a positive response because of following reasons:
+
+\begin{enumerate}
+
+\item In case we assume that by simply adding to the buffered list, next time the request comes it will simply be sent through. The assumption is flawed as the maximum size of the verified set is regulated and therefore it might happen that the next time the request comes, the information might already be cleaned.
+
+\item In addition to this, we don't know if the node is going to send the request again. Therefore, it might result in disconnected nodes in the system.
+
+\end{enumerate}
 
 \end{enumerate}
 
