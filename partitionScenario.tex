@@ -158,6 +158,10 @@ The PAG needs to be constructed carefully as there might be a lot of cases in wh
 
 \end{enumerate}
 
+
+\item When filtering samples in the croupier as part of potential partitioned nodes in the system, we need to be careful with certain things. Gradient by default doesn't allow the nodes that are lower in terms of partition depth in the gradient. Therefore we need not care about those. We need to be careful about the nodes at the same level and the level ahead. Therefore we allow the croupier to actually send in the network partitioned samples in the gradient and the application which are below itself. Now as for the nodes that are the same level and the level above, we check for the network partitioned nodes but performing the last leader unit check.
+
+
 \end{enumerate}
 
 
