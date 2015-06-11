@@ -167,4 +167,29 @@ The PAG needs to be constructed carefully as there might be a lot of cases in wh
 \end{enumerate}
 
 
+\section{Leader Election Protocol}
+
+In context of distributed systems various leader election protocols have been discussed {several references}. Election of leader for a group of nodes in the system typically requires all the nodes to agree upon the leader. Once the leader gets elected, it coordinates between the nodes and helps the group to move forward. 
+\par As mentioned above, all the nodes usually need to know about the node that would be elected as leader but in case of large scale system it would usually result in huge traffic in the system. As part of this research, we introduced a weaker form of leader election protocol known as \textit{leader selection}. As part of this protocol, we select a group of \textit{top K} nodes in the system. The node which has the highest utility among the K members tries to assert itself as the leader. The node in order to become the leader asks for promises from the other nodes in the selected group. In case, the nodes see anybody above the node rejects the promise. The requesting only moves to the commit phase after receiving promises from all the nodes in the group. In case any one of them rejects, the node resets the convergence counter and waits for the system to stabalize again. 
+
+\par In order to better understand the mechanism, we need to look at the overlay over which the system is built. We use the Gradient topology, which is a class of P2P topology in which the nodes in the systems organize themselves in the network in such a way that the nodes with the highest utility  are concentrated at the center of the network and the nodes with low utility lies on the outer edges of the network. We use a \textit{preference function}, according to which nodes have a higher preference to form connections with the nodes which have utility higher but closer to itself with higher probability. In this way the nodes arrange themselves in the system. In addition to this, every node runs a convergence function in which it tries to calculate a percentage change in the number of neighbors. In case the change is greater than a predefined threshold \textit{D}, the node resets the convergence counter. On the other hand, if the change is below the threshold the node increments the counter. 
+\par The node only tries to assert itself the leader, when the convergence counter has reached a certain value and the node based on its own utility sees no other node above it. It is then the node starts the promise round with the other K nodes. This process of determining if self node is a leader is carried out by every node in every shard in the system. Eventually the leader gets elected for every shard. In addition to leader, every shard also has a follower group selected by the leader itself. The purpose of the follower group is to help the leader with the replication of the commands and the steps taken by the leader. In case the leader dies, the next higher node usually from the follower group takes over the leadership for that shard. The main functionality of the members of the followers group is as follows:
+
+
+\begin{enumerate}
+
+\item Reject all promises in case the node has already promised or is a part of follower group.
+
+\item Accept a promise in case the node doesn't see anybody above the requesting node in terms of utility.
+
+\item Expire a promise in case the commit message is not received before the timeout for a specific promise.
+
+\end{enumerate}
+
+
+As part of the leader selection mechanism, we try to elect a leader as soon as possible. In a very dynamic system where nodes can join and leave the system, it is very much possible that a better node comes along and try to assert itself as a leader thus violating the safety condition of having only a single leader per shard in the system. In order to prevent this, when a node gets elected as the leader, it along with the chosen follower group, artificially augments the utility by switching on the leader memebership check. This check places the group at the center of the shard. In this way when a better node comes along, it cannot instantaneously start the election protoco because it's self membership check is switched off and it sees the current group as better than himself. 
+
+\par This feature of artifically increasing the utility might lead to violation of fairness protocol, meaning that a node which became a leader initially, can become the leader for eternity in case the group membership check is not switched off. Therefore, it is the responsibility of the leader to locally switch off the leader group membership check and then look at the neighboring samples. In case the leader finds a better node, the leader simply backs of by terminating its membership. The follower group detects it and removes themselves from the group membership. The better node detects this and then starts the promise round itself and takes over the leadership for the current shard.
+
+
 \end{document}
