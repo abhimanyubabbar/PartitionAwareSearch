@@ -1,5 +1,5 @@
 \documentclass[a4paper, 11pt]{article}
-\usepackage[margin=0.8in]{geometry}
+%\usepackage[margin=0.8in]{geometry}
 %\usepackage[T1]{fontenc}
 %\usepackage{babel}
 %\setcounter{section}{6}
@@ -164,9 +164,15 @@ The PAG needs to be constructed carefully as there might be a lot of cases in wh
 
 \item In index pull mechanism, you not only indicate the entry that you are currently at but also the max entry that you need to pull to based on the current epoch closing value. This is necessary as it will prevent the nodes from pulling entries that will be eventually added to the nodes but not now. It will also create disparity between the nodes in the system in terms of uneven entries. 
 
+\item In order to prevent the corner merge cases as stated earlier, the splitting point case, we need the max entries in the leader unit that are being added currently. Earlier, we simply added the max entries when we wanted to close the epoch. So the leader unit structure would look something like \textit{(epoch, leaderid, ONGOING, 0)} initially and then \textit{(epoch, leaderid, COMPLETED, 100)}. The leader unit didn't evolve with time. This lead to the control pull pulling the same \textsc{ONGOING} update with the 0 entries, which prevented the index pull to evolve in a structured manner and therefore the pull could simply start pulling wildly and go beyond the max entries in case of partition merge. This is one of the main reasons that we need to have current max entries in the leader unit and then the node gets the update for the next entries limit that needs to be pulled. 
+
+This will make the nodes a little slow, it terms that the update from the control pull tells them that 10 more entries has been added, go look for them in the system.  And then the node goes and look for them only till that point. Because now when the node requests for the next entries and the other partition merge happens, they will deny him saying that \textit{Hey, you say give me next updates from mentioned epoch, leader and max entries but it seems that this epoch already closed at max entries - 10, so I can't give you anything for now, return }. 
+
+The PAG also gets the update regarding the max entry size of the ONGOING last leader unit and will be used in the look ups. Once the node is detected as bad for shuffling the descriptor eventually becomes old and phases out.
+
 \end{enumerate}
 
-
+\newpage
 \section{Leader Election Protocol}
 
 In context of distributed systems various leader election protocols have been discussed {several references}. Election of leader for a group of nodes in the system typically requires all the nodes to agree upon the leader. Once the leader gets elected, it coordinates between the nodes and helps the group to move forward. 
