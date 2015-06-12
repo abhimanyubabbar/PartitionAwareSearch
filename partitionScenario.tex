@@ -3,9 +3,86 @@
 %\usepackage[T1]{fontenc}
 %\usepackage{babel}
 %\setcounter{section}{6}
-\setlength{\tabcolsep}{8pt}
-\renewcommand{\arraystretch}{1.5}
-\usepackage{url}
+\usepackage{times,amsmath,epsfig}
+\usepackage[utf8]{inputenc}
+\usepackage[usenames,dvipsnames]{color}
+\usepackage{amssymb}
+
+\let\labelindent\relax
+
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
+\usepackage{pdfpages}
+\usepackage{fancyhdr}
+\usepackage{exscale}
+\usepackage{booktabs}
+\usepackage{multicol}
+\usepackage{multirow}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{ntheorem}
+\usepackage{paralist}
+\usepackage{verbatim}
+\usepackage{color}
+\usepackage{hyperref}
+\usepackage{enumitem}
+\usepackage{listings}      % source code
+\usepackage{algorithm}
+\usepackage{algorithmicx}  % pseudo code (1/2)
+\usepackage[noend]{algpseudocode} % pseudo code (2/2)
+\usepackage{setspace}
+\usepackage{tikz}
+\usepackage{array}
+\usepackage{relsize}
+\usepackage{diagbox}
+\usepackage{listings}
+
+
+\DeclareMathOperator{\union}{\mathtt{union}}
+\providecommand{\myfloor}[1]{\left \lfloor #1 \right \rfloor}
+
+%%%%%%TRIGGER
+\algblockdefx[TriggerS]{TriggerS}{EndTriggerS}[2][event]
+  {\textbf{trigger} $\langle #1 \rangle$;}
+
+%No extra line - TriggerS 
+\makeatletter
+\ifthenelse{\equal{\ALG@noend}{t}}%
+  {\algtext*{EndTriggerS}}
+  {}%
+\makeatother
+
+\algblockdefx[Trigger]{Trigger}{EndTrigger}[2][event]
+  {\textbf{trigger} $\langle#1$ $\mid$ $#2\rangle$;}
+
+%No extra line - Trigger  
+\makeatletter
+\ifthenelse{\equal{\ALG@noend}{t}}%
+  {\algtext*{EndTrigger}}
+  {}%
+\makeatother
+
+%%%%%%FOR EACH
+\algblockdefx[ForEach]{ForEach}{EndForEach}[2][collection]
+   {\textbf{ for each } $#1$ \textbf{as} $#2$}
+
+%No extra line - ForEach
+\makeatletter
+\ifthenelse{\equal{\ALG@noend}{t}}%
+  {\algtext*{EndForEach}}
+  {}%
+\makeatother
+
+%%%%%%UPON
+\algblockdefx[UponEvent]{Upon}{EndUpon}[2][event]
+  {\textbf{upon event} $\langle#1$ $\mid$ \emph{#2}$\rangle$ \textbf{do} }
+
+\algblockdefx[UponEventS]{UponS}{EndUponS}[2][event]
+  {\textbf{upon event} $\langle#1\rangle$ \textbf{do} }
+
+
 
 \author{
   Babbar, Abhimanyu\\
@@ -198,4 +275,127 @@ As part of the leader selection mechanism, we try to elect a leader as soon as p
 \par This feature of artifically increasing the utility might lead to violation of fairness protocol, meaning that a node which became a leader initially, can become the leader for eternity in case the group membership check is not switched off. Therefore, it is the responsibility of the leader to locally switch off the leader group membership check and then look at the neighboring samples. In case the leader finds a better node, the leader simply backs of by terminating its membership. The follower group detects it and removes themselves from the group membership. The better node detects this and then starts the promise round itself and takes over the leadership for the current shard.
 
 
+
+\section{Algorithm}
+
+\begin{algorithm}[h]
+\caption{Eventual Leader Selection - Leader} 
+\label{leader}
+\begin{algorithmic}[1]
+\Upon[init]{nodeId}
+  \State $selfId := nodeId;$ $round := 0;$
+  \State $isLeader := false;$ $stableGradient := false;$
+  \State $gradSample := \emptyset;$ $followerGroup := \emptyset;$
+  \TriggerS[periodicCheck]{}\EndTriggerS
+ \EndUpon
+
+\Upon[gradientSample]{sample}
+  \State $stableGradient := $ \emph{stable}$(sample);$
+  \State $gradientSample := sample;$
+ \EndUpon
+
+\UponS[periodicCheck]{}
+  \If{$!isLeader$ AND $stableGradient$ AND \emph{highestUtility}$(selfId, gradientSample)$}
+     \State $followerGroup := $ \emph{getTopK}$(gradientSample);$
+     \ForEach[followerGroup]{member}
+       \Trigger[promiseReq]{selfId, round} \EndTrigger
+    \EndForEach
+    \TriggerS[roundTimeout]{} \EndTriggerS
+    \State $promiseSet := \emptyset$
+  \EndIf
+ \EndUponS
+
+\Upon[promiseAck]{pNodeId, pRound}
+  \If{pRound = round}
+    \State $promiseSet := promiseSet \cup \{pNodeId\}$
+    \If{followerGroup = promiseSet}
+      \ForEach[followerGroup]{member}
+        \Trigger[lease]{selfId}\EndTrigger 
+      \EndForEach
+      \State $isLeader := true;$
+      \TriggerS[leaseTimeout]{}\EndTriggerS
+      \TriggerS[cancelRoundTimeout]{}\EndTriggerS
+    \EndIf
+  \EndIf
+\EndUpon
+
+\Upon[promiseNack]{pNodeId, pRound} 
+  \If{pRound = round}
+    \State $round++;$
+    \TriggerS[cancelRoundTimeout]{}\EndTriggerS
+  \EndIf
+\EndUpon
+
+\UponS[roundTimeout]{}
+  \State $round++$
+\EndUponS
+
+\UponS[leaseTimeout]{} 
+  \State $sample := $ \emph{resetUtility}$(gradientSample);$
+  \If{\emph{highestUtility}$(sample)$}
+    \State $followerGroup := $ \emph{getTopK}$(sample)$
+    \ForEach[followerGroup]{member}
+      \Trigger[lease]{nodeId} \EndTrigger
+    \EndForEach
+    \TriggerS[leaseTimeout]{}\EndTriggerS
+  \Else
+    \State $isLeader := false;$
+  \EndIf
+\EndUponS
+
+\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[h]
+\caption{Eventual Leader Selection - Follower} 
+\label{follower}
+\begin{algorithmic}[1]
+
+\UponS[init]{id}
+  \State $isFolower := false;$
+  \State $selfId := Id;$ $pendingPromise := Nil;$
+  \State $gradientSample := \emptyset;$
+\EndUponS
+
+\Upon[gradientSample]{sample}
+  \State $gradientSample := sample;$
+ \EndUpon
+
+\Upon[promiseReq]{nodeId, round}
+  \If{$!isFollower$ AND $pendingPromise = Nil$ AND \emph{highestUtility}$(nodeId, gradientSample)$}
+    \State $pendingPromise := nodeId;$
+    \Trigger[promiseAck]{selfId, round}\EndTrigger
+    \TriggerS[promiseTimeout]{}\EndTriggerS
+  \Else
+     \Trigger[promiseNack]{selfId, round}\EndTrigger
+  \EndIf
+\EndUpon
+
+\UponS[promiseTimeout]{}
+  \State $pendingPromise := Nil;$
+\EndUponS
+
+\Upon[lease]{nodeId} 
+  \If{$pendingPromise = nodeId $}
+    \TriggerS[followerLeaseTimeout]{}\EndTriggerS
+    \TriggerS[cancelPromiseTimeout]{}\EndTriggerS
+    \State $isFollower := true;$
+    \State \emph{setFollowerUtility}$();$
+  \EndIf
+\EndUpon
+
+\UponS[promiseTimeout]{}
+  \State $pendingPromise := Nil;$
+\EndUponS
+
+\UponS[leaseTimeout]{} 
+  \State $isFollower := false;$
+  \State \emph{resetFollowerUtility}$();$
+\EndUponS
+
+\end{algorithmic}
+\end{algorithm}
+
+
 \end{document}
+
