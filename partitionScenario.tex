@@ -247,6 +247,11 @@ This will make the nodes a little slow, it terms that the update from the contro
 
 The PAG also gets the update regarding the max entry size of the ONGOING last leader unit and will be used in the look ups. Once the node is detected as bad for shuffling the descriptor eventually becomes old and phases out.
 
+
+\item Why can't we simply divide the entries at the sharding point only ? \\
+Dividing the entries at the sharding point is a difficult task because then also have to remember that we also have to split the entries in shard at the point mentioned. In addition to this, the index pull tracker needs to be updated about the max entries that he is allowed to pull when in the splitting shard. This itself becomes a hack. Instead, if we split at the starting point of the shard then it will be a little easy to generate the skip list as complete leader units will be in that list. 
+
+
 \end{enumerate}
 
 \newpage
