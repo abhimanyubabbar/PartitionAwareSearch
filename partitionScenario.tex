@@ -402,5 +402,55 @@ As part of the leader selection mechanism, we try to elect a leader as soon as p
 \end{algorithm}
 
 
+
+\section{Network Partitioning}
+In this section we will talk about the concepts that will be used as part of the network partitioning.
+
+
+
+
+\section{Abstract}
+Full text decentralized search based on peer to peer architecture is still one of major unresolved problem as part of Distributed Systems domain. Traditional search engines like Google employ self owned servers to store and locate data. As part of the thesis, we propose full text decentralized system Sweep which is built on Apache Lucene.
+\par The approach uses a gossiping protocol to discover new peers in the system. In addition to this, every node connects to a subset of nodes in the whole system based on there utility or usefulness to that particular node. Load balancing in the system is achieved by automatically sharding the entries when the corresponding limit has been reached. Each shard has a leader of its own which the responsibility of taking decisions like addition, deletion and updationg of entries, splitting in event of shard reaching its predefined capacity.
+
+
+
+
+\section{Introduction}
+
+\subsection{Motivation}
+Motivation Behind the thesis.
+
+\subsection{Delimitations}
+Boundaries of the approach.
+
+\subsection{Contribution}
+The main aim of the thesis is to come up with up with a approach for creating a Partition Aware full text decentralized search engine. The main contribution of the thesis is as follos:
+
+\begin{itemize}
+	\item Design and implementation of a full text decentralized search engine.
+	\item Design and implementation of a weaker form of leader election protocol to elect a trusted node for a particular shard which would be responsible for implementing the decisions like addition, deletion and updation of entries in the system.
+	\item Designing a basic approach for the detection of the network partition and merge during the partition healing.
+		
+\end{itemize}
+
+\subsection{Outline}
+The main outline of the thesis. Main chapters as part of thesis.
+
+
+
+\section{Background}
+In background section, we provide explanation about the technologies and concepts used. Here we talk about the \textbf{Google Search, Git Merge, Kompics, Apache Lucene, Consistency Models and CAP Theorm.}
+
+
+\section{Related Work}
+
+\begin{enumerate}
+	\item Amazon Dynamo
+	\item Cassandra
+	\item ElasticSearch and Solr
+\end{enumerate}
+
+
 \end{document}
 
