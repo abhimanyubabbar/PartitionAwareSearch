@@ -452,5 +452,128 @@ In background section, we provide explanation about the technologies and concept
 \end{enumerate}
 
 
+
+
+
+
+\section{Evaluations}
+
+
+In this section we will be writing about the various experiments that were performed.
+
+\begin{enumerate}
+
+\item Mention about the machine used to perform simulations.
+\item Mention the man internal parameters that were set during the simulations.
+\item Then mention the experiments. Explain the experiment with the see-saw version.
+
+
+\end{enumerate}
+
+
+
+
+
+\subsection{Experimental Setup}
+
+The evaluations were performed on the machine with the following specifications:
+
+\begin{itemize}
+
+\item 8GB of RAM
+\item Eight Cores (Intel(R) Core(TM) i7 CPU 860  @ 2.80GHz)
+\end{itemize}
+
+The nodes were started in simulation on a single machine. A helper module was used to keep track of all the nodes started in simulation in order to communicate with them during the entry addition phase. A special node known as the leader node was also started with the lowest value of the identifier. Keeping other parameters as same, this allowed the node to become leader during the initial leader election phase. In addition to this, a global aggregator node was also booted. The peers internally have a local aggregator component which keeps track of the overall state of the peer based on the information received from various other components. The local aggregator constantly sends the information over to the global aggregator node. In this we are able to keep track of the overall state of the system.
+
+
+
+\subsection{Workload Setup}
+
+Unless otherwise specifically mentioned, we ran simulations with cluster of 200 nodes. The simulation in Kompics is single threaded in order to reproduce the results, the limiting factor was the capacity of single core of the machine. The other parameters that were tuned for the simulations are as follows:
+
+\begin{itemize}
+\setlength\itemsep{0em}
+\item \textit{gradientViewSize} - 10 nodes
+\item \textit{croupierViewSize} - 10 nodes
+\item \textit{gradientShuffle} - 1000 (ms)
+\item \textit{croupierShuffle} - 1000 (ms)
+\item \textit{branchingFactor} - 10
+\item \textit{electionConvergenceRounds} - 6
+\item \textit{electionConvergenceTest} - 0.8d
+\item \textit{Entry Pull Round} - 4000 (ms)
+\item \textit{Control Pull Round} - 3000 (ms)
+\item \textit{maxEntryExchange} - 25 nodes/ pull
+\end{itemize}
+
+In addition to it, the minimum nodes that nodes needs to pull either control or the entry data needs to be \textbf{three}. This conditions is respected by each and every node unless they find the leader in the view of there own gradient. Every node implicitly trusts the leader and therefore pull data directly from it.
+
+
+
+
+\subsection{Convergence Experiment}
+
+The \textit{Convergence Experiment} helps to understands the rapidness with which the entry gets disseminated in the system. As part of this experiment, we booted up 250 nodes in simulation. Once the system was stabilized in terms of leader of the shard getting elected and the marker entry for the current epoch was already added to each node, we then added a single entry to the leader and analyzed the time it took for the entry to be disseminated to all the nodes in the system. The results as shown in \textbf{Figure} points out that it took 8 - 9 (sec) for all the nodes to get the entry. This time evaluates to roughly two pull rounds based on the current pull round timeout.
+
+
+The Figure 2 shows the same experiment but now with 500 nodes in the simulation. The outcome is same as the previous one. The reason is because of the \textit{branchingFactor} parameter which is set to 10. Because of this, the nodes in the range of 60-600 are supposed to get the entry in approx 2 rounds. The results also conform with the expected outcome. 
+
+
+\subsection{Add Entry Throughput}
+
+In this experiment, we initially booted up 200 nodes in simulation. Once the gradient and the leader group becomes stabilized, initial batch of 20 entries were added in the system. We then started adding entries at varying rates likes \textit{1 entry per sec}, \textit{2 entry per sec} and  \textit{6 entry per sec} for a fixed predefined period of time. As part of this experiment, we analyzed the fifty, seventy five and ninety nine percentile values i.e. number of nodes which at any given time during the operation of entry addition have fifty percent, seventy five percent and ninety nine percent of the entries. 
+
+\par The Figure 3 depicts the metrics in case of \textit{1 entry per sec}. As we can see the fifty percentile metrics seems stable as in all the nodes during the entry addition phase has atleast fifty percent or more of the entries. In case of seventy five percentile, it depicts a seesaw like structure. This behavior of the system initially looks strange but a closer look at the interaction of the application with the overlay over which the system is built can help to understand this behavior. As mentioned earlier, a node in order to perform a control pull needs to have atleast three nodes above himself in terms of utility. The node then matches the responses and incorporate the common in order responses in the local \textit{timeline}. As node mainly fetches the leader unit updates through the control pull, the entry pull mechanism takes this updated information about the number of entries in the system, requests for the next entries from the nodes above it. The mechanism of matching the responses is same as in case of control pull protocol. 
+\par The node then incorporates the entries by adding them to the Lucene Store and augmenting the utility accordingly. The application then informs the other components about its updated utility which allows them to make informed decisions. The overlay network contains the sample of nodes based on the preference function. With a sudden increase in the utility the local view of the gradient becomes obsolete and therefore the number higher samples return by the gradient to the application diminish. In case a node unable to find desired number of higher utility nodes for the control pull simply returns. It is because of the obsolete gradient samples the node doesn't start the control pull. In absence of the updated information about the entries in the system, the entry pull mechanism is unable to pull the next entries. Therefore the nodes in range of seventy percentile drops. Once the sample gets refreshed due to continuous shuffling and nodes injecting updated utilities in the system, the nodes are able to find the nodes above itself and start pulling the control information  resulting in the new entries being pulled.
+
+\par The Figure 4 depicts the performance of the system in event of addition of \textit{6 entry per sec}. The seesaw like structure can now be observed both in the fifty and seventy-five percentile. The reason being same as mentioned above. As the nodes near to the center of the gradient waits for the gradient to stabilize to get updated information, the nodes farther away near to the edges of the gradient are also unable to get the updated information. Thus they also start lagging in terms of catching up to the leader group with has the latest information in terms of entries being added in the system. Apart from this, as observed from the diagrams the ninety percentile is really low in range of \textit{1-3\%}. The reason for this is the entries present in the system. As the entries that are added are usually low in addition to the initial entries, even a difference of one entry will remove a particular node from the ninety percentile. Therefore only the leader group nodes to which the leader replicates the entry are present in this range.
+
+
+
+
+
+
+\subsection{Churn Experiment}
+
+As part of this experiment, we initially started the system with 200 nodes and loaded the system with 100 entries. We started with the addition and the simultaneous removal \textit{4 Nodes per sec} of the node from the system. We continued this behavior for \textit{60 Seconds} thus resulting in a churn of \textit{4 \%}. Nodes from the system except the nodes from the leader group were selected randomly to be removed by stopping there execution. New nodes were booted up with different node ids. In addition to this, a constant rate of \textit{1 entry per sec} was employed for the entry addition. Figure 5 depicts the fifty, seventy five and the ninety percentile values. As we can see more than fifty percent of the nodes had fifty and seventy percent of the entries at all times during the experiment. Only the leader group nodes seemed to be in the category of nodes having ninety nine percent of the entries at all times. 
+
+
+
+\subsection{Flash Crowd Experiment}
+As part of this experiment we started with 200 nodes in the system and loaded the system initially with 100 entries. Then we introduced bunch of fresh nodes in the system simultaneously and analyzed the time it took for the nodes to catch up. We performed the experiment for flash crowd size of \textit{10 percent, 20 percent and 40 percent} respectively. As seem from Figure 6 and 7, it took \textit{20 seconds approximately} for the nodes to catch up with fifty percent of the entries. In addition to this, the time taken by nodes to catch up with the seventy five and ninety nine of the entries is approximately the same. 
+
+\par Ideally as the \textit{maxEntryFetch} parameter per entry pull is \textit{twenty five}, it should take sixteen seconds i.e \textit{4 pull rounds} approximately for the nodes to fetch all the entries in the system but as observed from the diagram it takes more time than that. It is because it takes some time for the nodes to adjust themselves in the overall gradient and then pull the control information. Once the control information is pulled and verified, the nodes are able to determine the entries in the system at that moment and then start looking for the entries by requesting them from the nodes higher than themselves in terms of utility.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 \end{document}
 
