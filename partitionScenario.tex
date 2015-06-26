@@ -452,10 +452,84 @@ In background section, we provide explanation about the technologies and concept
 \end{enumerate}
 
 
+\newpage
+\section{Design}
+
+
+\subsection{System Model}
+
+\begin{itemize}
+
+\item \textit{Peers}: The system is composed of peers which basically are processes executed by the clients. The clients join the system by bootstrapping themselves with the already present peers in the system. The peers follow the Crash/ Stop process [ref] i.e a peer upon failure crashes and stops all communication with the other nodes. Once the node has failed that node never comes up. 
+
+
+\item \textit{Communication Links}: As part of system design we assume the communication link to be fair-loss links[reference]. Therefore, the network only transfers the messages that are sent from the application and cannot create the messages on its own. In addition to this, we assume the network to be partially synchronous meaning there are times during which the network might being asynchronous and drop messages but eventually the network will become synchronous with upper bounds on the message transmission time.
+
+\item \textit{Overlay Network}: The system is built upon Gradient [reference] which constructs an overlay based on the preference function. The preference function used for the application will be explained later in detail but in general it helps to identify the ranking of node as compared to others. The Gradient in turn is built upon a peer sampling service which provides random samples from the application to the Gradient component.
+
+\end{itemize}
+
+
+
+\subsection{Overlay Network}
 
 
 
 
+\subsection{Architecture}
+
+\subsubsection*{Preference and Utility Function}
+
+Each peer in the system has an associated utility based on the state of the peer at that instant. As the system evolves with time, so does its utility. As already mentioned, in order to build the overlay network, system uses a \textit {Preference Function} based on the utilities of the nodes. A peer uses this preference function mainly during the selection of peer for shuffling and to keep track of preferred neighbors. The preference function in case of  Sweep is selection of the peers which have a higher utility than self but closer to self with higher probability. As seen in the diagram, if we assume utility having an absolute value, as per the preference function, \textit{Peer C} will prefer \textit{Peer A} over \textit{Peer B}, even though both have higher utility than C because A's utility is closer to utility of A.
+
+\par The preference function is based on the utility of a particular peer. It helps a peer to select a preferred peer from a collection of peers. The utility function is generally any metric or set of rules usually depending upon the application requirement which would help to create a total order on the peers in the system. In case of Sweep, the utility function is as follows:
+
+\small 
+\begin{equation*}
+    LeaderGroup \prec ReplicationScore \prec PeerScore \prec PeerID
+\end{equation*}
+\normalsize
+
+In process of comparison of utility values between two different nodes, we simply compare them in order defined above i.e from \textit {left to right}. We move on to the next parameter in the utility function in case ordering cannot be achieved on the previous parameter. The utility function comparison starts by looking at the leader group membership check which indicates if a node is part of leader group for a particular shard. In case a node has this check switched on, the utility of the node suddenly increases compared to the other peers in the same shard. The Replication Score parameter indicates the quantity of the entries that a peer has its local lucene store. As system evolves and more entries are added in the shard the peer with a higher \textit{Replication Score} count indicates a better node in terms of serving latest entries added. Keeping in view the fairness protocol, we also have a \textit{PeerScore} metric in the utility function. This score helps to identify the peers with superior resources in terms of computational capability, higher bandwidth. These nodes are given importance as they can easily serve a larger audience in the shard. The peer id is used a tie breaker in the function. We assume that the peers joining the system have unique peer id's.  In this way, we achieve a total order on the peers in the system.
+\\
+
+TODO: TREE GRADIENT an fingers and jumps.
+
+
+\subsubsection*{Pull Protocol}
+
+The general overall functioning of the system involves electing a leader i.e a node with the highest utility at that instant of time as the leader of shard. The leader takes decisions in the shard in terms of addition/ deletion and updating entries in the shard. In order to prevent a single point of failure the leader performs a two phase commit to the nodes elected as part of leader group. The Leader Election protocol is explained later in detail in section [mention section]. Once the entry has been replicated to the leader group nodes, the leader returns back a successful response to the client. Now the peers can either push the entries to the neighboring nodes or nodes need to pull the entries added. The push protocol seems lucrative in terms that the peers as soon as they discover about a new entry, push the entry to other nodes. It prevents the other nodes constantly looking for the entries by asking the higher utility nodes. But there are major flaws in this scheme.
+
+\begin{enumerate}
+
+\item First, we cannot guarantee that the entry will be received by every node in the shard as it is based on push protocol and current neighbors. In case a particular peers reference is not in the higher utility nodes, the entry will not be pushed to it.
+
+\item It makes the system vulnerable to Byzantine Nodes [reference] which can easily push junk data.
+
+\item The biggest flaw in this protocol is way in which the preference function is defined. As mentioned earlier a particular node prefers node which higher but closer utility. This means that given enough peers which have higher utility, the peers neighbors will all point to the nodes above in the Gradient, therefore the nodes which are on the edges of a particular shard will never receive the entry.
+
+\end{enumerate} 
+
+As a result, we introduced pull protocol, in which the nodes constantly request the peers higher than self in terms of utility about any latest developments or decisions taken in the shard by the leader. This way there are able to disseminate the information in the system. The dissemination protocol will be explained in greater detail in section [mention section]
+
+
+\begin{itemize}
+
+
+\item Application Entries 
+
+\item Entry Dissemination
+
+\end{itemize}
+
+
+
+
+
+
+
+
+\newpage
 \section{Evaluations}
 
 
