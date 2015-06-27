@@ -491,9 +491,8 @@ Each peer in the system has an associated utility based on the state of the peer
 \normalsize
 
 In process of comparison of utility values between two different nodes, we simply compare them in order defined above i.e from \textit {left to right}. We move on to the next parameter in the utility function in case ordering cannot be achieved on the previous parameter. The utility function comparison starts by looking at the leader group membership check which indicates if a node is part of leader group for a particular shard. In case a node has this check switched on, the utility of the node suddenly increases compared to the other peers in the same shard. The Replication Score parameter indicates the quantity of the entries that a peer has its local lucene store. As system evolves and more entries are added in the shard the peer with a higher \textit{Replication Score} count indicates a better node in terms of serving latest entries added. Keeping in view the fairness protocol, we also have a \textit{PeerScore} metric in the utility function. This score helps to identify the peers with superior resources in terms of computational capability, higher bandwidth. These nodes are given importance as they can easily serve a larger audience in the shard. The peer id is used a tie breaker in the function. We assume that the peers joining the system have unique peer id's.  In this way, we achieve a total order on the peers in the system.
-\\
 
-TODO: TREE GRADIENT an fingers and jumps.
+\par The benefit of achieveing total order on the nodes is the ability to assign ranks to the nodes with the lowest rank i.e. 0 being assigned to the \textit{leader} of the shard. As the system is continously evolving, the utility of peers is changing and therefore the peers in the shard based on the neighboring peers can then adjust there own ranks. The purpose of assigning ranks is the creation of fingers which are nothing but long range links that each peer hold. Based on the rank, the peer usually try to find fingers i.e. links to the peers that are half its own rank. These fingers help speeding up the dissemination of the updates in the system.
 
 
 \subsubsection*{Pull Protocol}
@@ -513,20 +512,24 @@ The general overall functioning of the system involves electing a leader i.e a n
 As a result, we introduced pull protocol, in which the nodes constantly request the peers higher than self in terms of utility about any latest developments or decisions taken in the shard by the leader. This way there are able to disseminate the information in the system. The dissemination protocol will be explained in greater detail in section [mention section]
 
 
-\begin{itemize}
 
+\subsubsection*{Gossip Based Data Dissemination}
+Once a peer becomes a leader, it is implicitly trusted by other members in the shard.
+Initially the information of a node becoming a leader is only published at the leader group chosen by the leader. This information then gets pulled by other peers in the system. In this situation, it might be very much possible that a Byzantine Node might start publishing wrong information to the peers during the pull protocol. In order to avoid such situations, a peer during the pull protocol, requests updates from a predefined configurable peers usually three that are above itself in terms of utility.  The peers respond with the hashes of the information. Only the information for which the hashes match from all the nodes is then pulled from anyone of the responding peers. 
+\par This approach is being used for securely disseminating the leader information in the system. In addition to this, entry dissemination is also based on this protocol. We think that this approach is secure enough in the sense that it is highly unlikely for all the nodes that are requested by peer to provide updates to be faulty.
+
+
+\subsubsection*{Load Balancing}
+
+As the system evolves, the leader receives request for adding new entries in the system. Using basic replication strategies the leader commits the entries to the leader group which then gets replicated to all the nodes in the shard using pull protocol. The system has a predefined \textit{MaxShardSize} parameter. When the entries grow beyond the count, the leader then initiates \textit{ShardSplit} protocol. As part of this protocol, each peer based on its identifier and its depth which is basically number of shard splits seen by the node, decides the next shard id. 
+\par Before initiating the two phase commit of the shard split, the leader stops handling the entry additions. It then looks in its local lucene store and after sorting the entries based on there identifiers, calculates the split point. This meta information is then committed to the leader group nodes along with the shard split update as a part of two phase commit. Once the information is pulled by other peers in the system, based on there new shardId, they decide to remove all the entries either before or after the split point. The peers then join the other peers in there respective shards. 
+\par It might be argued that after the shard split, the entries get divided, so the search results might not be complete. It order to prevent this, each peer has a \textit{routing table} which keeps references to the peers in other shards. The table gets populated and updated by our \textit{Peer Sampling Service} which provides peers with random samples from different shards. Upon receiving shard request, the peer simply forwards the request to the peers in the other shards.
+
+\begin{itemize}
 
 \item Application Entries 
 
-\item Entry Dissemination
-
 \end{itemize}
-
-
-
-
-
-
 
 
 \newpage
