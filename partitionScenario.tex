@@ -438,10 +438,23 @@ The main aim of the thesis is to come up with up with a approach for creating a 
 The main outline of the thesis. Main chapters as part of thesis.
 
 
-
+\newpage
 \section{Background}
 In background section, we provide explanation about the technologies and concepts used. Here we talk about the \textbf{Google Search, Git Merge, Kompics, Apache Lucene, Consistency Models and CAP Theorm.}
 
+The concept of full text decentralized search and distributed database has been around for quite some time. 
+
+
+This section will present a brief introduction about the full text search and distributed databases. In addition to this, the decentralized search prototype is developed in Kompics[reference], so we will also be providing a brief introduction about the same. In addition to this, we will also be mentioning Git Merge protocols which is used as a motivation for the potential Network Partition Merge Strategy.
+
+
+\subsection*{Apache Lucene}
+
+Apache Lucene [reference] is a robust and an extremely fast Java Library which was written by Doug Cutting in 1999. It is mainly used for \textit{full text searching}. Lucene has been throughly tested and is used by companies like Twitter[reference] and ElasticSearch[reference] to provide with full text search. At the core of Lucene is concept of Index containing Documents. Documents are mainly containers of information that needs to be indexed. Its the responsibility of the application to construct the Document by adding the data as fields in it. The ability to treat Documents as collection of fields with text is main reason behind the powerful nature of Lucene. This allows user to index files of any format like PDF, Html, Excel etc. 
+
+\subsection*{Kompics}
+Kompics[reference] is an \textit{Asynchronous Message Passing} framework based on Component Model. The main purpose of Kompics is to simplify the development of complex distributed applications by leveraging multi-core machines and providing a robust simulation framework with capability of providing reproducible results. 
+\par As mentioned above, Kompics is based on a Component Model which is mainly a reactive state machine. These components execute concurrently and communicate asynchronously by message passing. These messages are known as \textit{Events} which are immutable typed objects. The information contained in these events is in form of attributes. Each component usually exposes an interface to other components known as \textit{Port}. These ports define the events that can pass through them and therefore act as filters by allowing specific events. In order to send an event between components, we need a communication medium or a link. This abstraction is known as \textit{Channel}. A channel connect ports of complimentary nature. The events sent over the channel are transferred and received by other component in FIFO order. In addition to this, each Component contains \textit{Handlers} which are first class procedures. Each handler is responsible for handling a particular type of event and gets executed when the component receives that event. The handler has capability to in turn trigger new events on other components. 
 
 \section{Related Work}
 
@@ -450,6 +463,13 @@ In background section, we provide explanation about the technologies and concept
 	\item Cassandra
 	\item ElasticSearch and Solr
 \end{enumerate}
+
+
+
+
+\subsection*{Amazon Dynamo}
+
+
 
 
 \newpage
