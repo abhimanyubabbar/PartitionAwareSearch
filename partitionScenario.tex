@@ -456,6 +456,16 @@ Apache Lucene [reference] is a robust and an extremely fast Java Library which w
 Kompics[reference] is an \textit{Asynchronous Message Passing} framework based on Component Model. The main purpose of Kompics is to simplify the development of complex distributed applications by leveraging multi-core machines and providing a robust simulation framework with capability of providing reproducible results. 
 \par As mentioned above, Kompics is based on a Component Model which is mainly a reactive state machine. These components execute concurrently and communicate asynchronously by message passing. These messages are known as \textit{Events} which are immutable typed objects. The information contained in these events is in form of attributes. Each component usually exposes an interface to other components known as \textit{Port}. These ports define the events that can pass through them and therefore act as filters by allowing specific events. In order to send an event between components, we need a communication medium or a link. This abstraction is known as \textit{Channel}. A channel connect ports of complimentary nature. The events sent over the channel are transferred and received by other component in FIFO order. In addition to this, each Component contains \textit{Handlers} which are first class procedures. Each handler is responsible for handling a particular type of event and gets executed when the component receives that event. The handler has capability to in turn trigger new events on other components. 
 
+
+\subsection*{Google Search}
+Nowadays, search on web is synonymous with Google Search. It has a robust network of hardware devices and in house software that allows it to handle millions of search requests everyday. A closer look at the software infrastructure[reference gs] reveals the presence of data structure known as \textit{Inverted Index} used for indexing the documents. The index containing the documents is divided into many pieces known as shards which are distributed and handled by multiple machines. This greatly helps in improving the search response by parallelizing the requests to these multiple shards which contain a subset of data. 
+\par The search request is initially handled by a DNS bases load balancer which redirects the query to a nearby cluster. The query is then processed by the cluster by parallelizing the request to multiple shards. Inside each shard a dedicated machine is responsible for handling queries. In first stage of the request, a list of doc id's is returned. The actual documents relating to these id's are fetched from the machines in the next stage. The results are sorted and returned back to the requesting node.
+
+
+\subsection*{Git Merge}
+
+
+
 \section{Related Work}
 
 \begin{enumerate}
@@ -466,6 +476,13 @@ Kompics[reference] is an \textit{Asynchronous Message Passing} framework based o
 
 
 
+\section{References}
+
+\begin{itemize}
+
+\item http://static.googleusercontent.com/media/research.google.com/en//archive/googlecluster-ieee.pdf (Google Search gs)
+
+\end{itemize}
 
 \subsection*{Amazon Dynamo}
 
