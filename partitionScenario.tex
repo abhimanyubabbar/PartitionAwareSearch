@@ -450,7 +450,7 @@ This section will present a brief introduction about the full text search and di
 
 \subsection*{Apache Lucene}
 
-Apache Lucene [reference] is a robust and an extremely fast Java Library which was written by Doug Cutting in 1999. It is mainly used for \textit{full text searching}. Lucene has been throughly tested and is used by companies like Twitter[reference] and ElasticSearch[reference] to provide with full text search. At the core of Lucene is concept of Index containing Documents. Documents are mainly containers of information that needs to be indexed. Its the responsibility of the application to construct the Document by adding the data as fields in it. The ability to treat Documents as collection of fields with text is main reason behind the powerful nature of Lucene. This allows user to index files of any format like PDF, Html, Excel etc. 
+Apache Lucene [reference] is a robust and an extremely fast Java Library which was written by Doug Cutting in 1999. It is mainly used for \textit{full text searching}. Lucene has been thoroughly tested and is used by companies like Twitter[reference] and ElasticSearch[reference] to provide with full text search. At the core of Lucene is concept of Index containing Documents. Documents are mainly containers of information that needs to be indexed. Its the responsibility of the application to construct the Document by adding the data as fields in it. The ability to treat Documents as collection of fields with text is main reason behind the powerful nature of Lucene. This allows user to index files of any format like PDF, HTML, Excel etc. 
 
 \subsection*{Kompics}
 Kompics[reference] is an \textit{Asynchronous Message Passing} framework based on Component Model. The main purpose of Kompics is to simplify the development of complex distributed applications by leveraging multi-core machines and providing a robust simulation framework with capability of providing reproducible results. 
@@ -459,10 +459,17 @@ Kompics[reference] is an \textit{Asynchronous Message Passing} framework based o
 
 \subsection*{Google Search}
 Nowadays, search on web is synonymous with Google Search. It has a robust network of hardware devices and in house software that allows it to handle millions of search requests everyday. A closer look at the software infrastructure[reference gs] reveals the presence of data structure known as \textit{Inverted Index} used for indexing the documents. The index containing the documents is divided into many pieces known as shards which are distributed and handled by multiple machines. This greatly helps in improving the search response by parallelizing the requests to these multiple shards which contain a subset of data. 
-\par The search request is initially handled by a DNS bases load balancer which redirects the query to a nearby cluster. The query is then processed by the cluster by parallelizing the request to multiple shards. Inside each shard a dedicated machine is responsible for handling queries. In first stage of the request, a list of doc id's is returned. The actual documents relating to these id's are fetched from the machines in the next stage. The results are sorted and returned back to the requesting node.
+\par The search request is initially handled by a DNS based load balancer which redirects the query to a nearby cluster. The query is then processed by the cluster by sending the request to multiple shards in parallel. Inside each shard a dedicated machine is responsible for handling queries. In first stage of the request, a list of doc id's matching the request is returned. The actual documents relating to these id's are fetched from the machines in the next stage. The results are sorted and returned back to the requesting node.
 
 
 \subsection*{Git Merge}
+In this section, we will be providing a brief introduction about Git and the strategies for \textit{Branching and Merging} used in it[reference]. Git is a popular distributed version control system used to record changes made to a particular file over time[reference version control]. Git is advancement over the previous centralized version control systems like VCS[reference] and SVN[reference] in sense that users unlike checking out particular files of the project located in centralized server simply checkout the whole project. This prevents a single point of failure as the server hosting the project in case of SVN could simply crash and the users are left with snapshots of specific checked out file. Git prevents it by \textit{cloning} whole project on to the user local directory. In addition to this, Git store the data and subsequent changes as separate snapshots of files in the projects which is in contrast to the process of storing base files with snapshots of incremental changes made to that file. This feature helps in committing changes to the git locally instead of trying to reach server everytime. Thus user can bundle the commits locally in case of absence of network and push them once available.
+\par The feature of git that makes it stand apart from its predecessors is the model used for branching and merging back. Git makes it very easy for the user to create different branches of the same project and work independently on them. In git, each commit containing changes to the files also has a unique value associated with it. In addition to this, it also has a reference to the previous commit. In this it allows user to work on a separate branch and allow it to make several commit. When the user decides to merge the data back in main branch, git looks at the \textit{HEAD} of the two branches and calculate the common ancestor. The git then calculates the changes made in both branches since the common ancestor and uses an intelligent strategy to merge and apply changes to a resultant branch. 
+
+
+\subsection*{CAP Theorem}
+Eric Brewer in 2000 put forward his opinion that in a distributed system we cannot achieve both \textit{Consistency} and \textit{Availability} during the event of \textit{Network Partitioning}. A distributed system that spans over thousands of machine usually see switches failing and communication between the nodes being interrupted. Therefore a set of nodes is whole system becomes unreachable resulting in network partitioning. At this stage, the application needs to decide based on the requirements to either provide \textit{Consistency} in sense that allow all user to read the previous written writes or focus on availability by providing the read and write capability in the system even in event of Network Partitioning.
+
 
 
 
@@ -481,6 +488,10 @@ Nowadays, search on web is synonymous with Google Search. It has a robust networ
 \begin{itemize}
 
 \item http://static.googleusercontent.com/media/research.google.com/en//archive/googlecluster-ieee.pdf (Google Search gs)
+
+\item 
+https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control (version control)
+
 
 \end{itemize}
 
@@ -511,7 +522,7 @@ Nowadays, search on web is synonymous with Google Search. It has a robust networ
 \subsection{Overlay Network}
 
 
-
+\subsection{Network Partition Merge}
 
 \subsection{Architecture}
 
@@ -564,7 +575,8 @@ As the system evolves, the leader receives request for adding new entries in the
 
 \begin{itemize}
 
-\item Application Entries 
+\item Application Entries.
+\item Large Fanout Search.
 
 \end{itemize}
 
