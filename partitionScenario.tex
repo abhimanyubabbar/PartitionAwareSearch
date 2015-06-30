@@ -492,6 +492,11 @@ Eric Brewer in 2000 put forward his opinion that in a distributed system we cann
 \item 
 https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control (version control)
 
+\item 
+http://highscalability.com/blog/2012/3/12/google-taming-the-long-latency-tail-when-more-machines-equal.html (taming-long-tail).
+
+\item 
+http://research.google.com/people/jeff/latency.html (jeff dean )
 
 \end{itemize}
 
@@ -572,6 +577,14 @@ Initially the information of a node becoming a leader is only published at the l
 As the system evolves, the leader receives request for adding new entries in the system. Using basic replication strategies the leader commits the entries to the leader group which then gets replicated to all the nodes in the shard using pull protocol. The system has a predefined \textit{MaxShardSize} parameter. When the entries grow beyond the count, the leader then initiates \textit{ShardSplit} protocol. As part of this protocol, each peer based on its identifier and its depth which is basically number of shard splits seen by the node, decides the next shard id. 
 \par Before initiating the two phase commit of the shard split, the leader stops handling the entry additions. It then looks in its local lucene store and after sorting the entries based on there identifiers, calculates the split point. This meta information is then committed to the leader group nodes along with the shard split update as a part of two phase commit. Once the information is pulled by other peers in the system, based on there new shardId, they decide to remove all the entries either before or after the split point. The peers then join the other peers in there respective shards. 
 \par It might be argued that after the shard split, the entries get divided, so the search results might not be complete. It order to prevent this, each peer has a \textit{routing table} which keeps references to the peers in other shards. The table gets populated and updated by our \textit{Peer Sampling Service} which provides peers with random samples from different shards. Upon receiving shard request, the peer simply forwards the request to the peers in the other shards.
+
+
+\subsection*{Large Fanout}
+In this section, we will be discussing the concept of \textit{latency variability} in large scale distributed systems. The term latency variability means the distribution of latencies during an operation over the network. The importance of latency variability has increased in recent times due to the requirement for real time responsiveness of applications. Google quickly discovered that simply scaling the system doesn't necessarily means better performance during the response times of search requests[reference taming]. This is due to the presence of a long tail. Normally the requests handled by a particular server are within the limits of respectable response times but once in a while the response time for a request would be much higher. This may be attributed to the network beign slow due to choke or system disk from which the data is supposed to be read is acting slow. This phenomenon of long tail has also been observed in trading systems where we might find the latencies of few trades in order of 900ms compared to normal latency of 5ms. 
+
+\par We might argue that the occurence of the phenomenon is not often enough to cause alarm but as the scale of the system keeps on growing as in case of Google where the data is divided into multiple shards. Now the search request needs to be faned out to a larger audience and therefore the probability of occurence of long tail increases as the requesting node needs to wait for responses from all the shards. This leads to unacceptable response times occuring with higher probability. 
+
+\par Google uses a lot of inovative approaches to solve issue of latency variability as mentioned by Jeffery Dean in this talk[reference jeff dean]. The approach that we are interested and have adapted for our prototype involves instead of sending to a single node in every shard the search request, we send it to a predefined number of nodes in that shard. We simply wait for the first response from that shard and discard the rest. The purpose behind it is to reduce the dependency on the slow performing node by replicating the request to other nodes within the same shard. Once all the shards have responded or search timed out, we collect, filter and augment the results with some metadata. This data is then returned to the requesting node. In this way the system makes significant steps towards preventing long tail in the response times during the search request.
 
 \begin{itemize}
 
