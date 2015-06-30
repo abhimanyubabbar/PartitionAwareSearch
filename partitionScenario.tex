@@ -589,9 +589,19 @@ In this section, we will be discussing the concept of \textit{latency variabilit
 \begin{itemize}
 
 \item Application Entries.
-\item Large Fanout Search.
 
 \end{itemize}
+
+
+\section{Implementation}
+
+In order to check for the viability of the theorectical approach we worked on developing a protoype on the principles stated in the design section. The prototype used Apache Lucene for storing and indexing data. In addition to this, the prototype was developed using the Kompics which is an asynchronous message passing system. 
+
+\subsection{Overlay Network}
+The system strives to be a dynamic system in which the nodes can join and leave depending upon there requirement. Gradient Topology over peer sampling service is being used to construct the overlay. As already mentioned, each peer holds references to limited number of other peers in the system. Now as the node leaves the system voluntarily or by crashing, the sample becomes stale. As an effort to keep neighborhood samples fresh, in case the size of the sample list grew beyond a predefined threshold we removed the oldest sample i.e peer reference with the highest age. We quickly realized that if this approach needs to be successful, we would need to synchronize the rate at which the gradient and the peer sampling service performs shuffling with the neighborhood nodes.
+\par In case the difference between the shuffling rates of both the services is large, the outcomes of the stabalization of the gradient were unexpected. The main reason behind it is that the peer sampling service feeds the sample to the gradient service. So in case the rate of shuffling in the croupier is fast, the increment in the ages would be frequent because as part of shuffling the peers increment the age of the references and then exchange sample. Therefore the croupier will feed the samples with high ages and the gradient shuffling is at a lower rate resulting in the slow rate of increase in ages. The nodes disseminate there updated utility in the system through the shuffles. Therefore, the probability of peer reference samples having ages higher than the corresponding samples present in the gradient sample is higher even though the reference from the sampling service has updated utility. It is because of the large gap in the shuffling rates of the both the services. Thus, the updated peer reference sample gets disseminated in the system slowly.
+
+\subsection{Operations}
 
 
 \newpage
