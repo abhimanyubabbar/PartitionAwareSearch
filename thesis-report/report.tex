@@ -336,16 +336,18 @@ Eric Brewer in the year 2000 put forward his opinion that in a distributed syste
 \chapter{Related Work}
 \label{sec:related_work}
 
-There are three earlier research projects that have done work related to this
-thesis topic. The first considers the problem from the point of view of
-throughput as measured in packets per second, the second in terms of
-throughput in bits per second, and the third in terms of the number of
-messages that are sent per second. Each of these methods will be described in
-the following subsections.
 
-\section{Amazon Dynamo}
 
 \section{Cassandra}
+Cassandra[reference] is a highly available distributed key value system deployed for managing backened services in Facebook. The system is developed for storing highly structured values. The system offers a simple API involving \textit{get, insert} and \textit{delete} operations.
+\par The system uses consistent hashing[reference] to identify the location of the node on the ring and data keys. A node is responsible for storing the keys which lie between the node and the successor. In order to prevent single point of failure, the keys are replicated over the \textit{N -1} successor nodes. Based on different policies for data replication, the other nodes used for replication of the key are selected. In addition to this, in case the load on a particular node increases, the system boots up separate light weight node and inject the node between the highly loaded node and its successor. As the new node joins, it becomes responsible for the keys between it and the successor.
+
+\section{Dynamo}
+Dynamo[reference] is Amazon's highly available key value store. The system is designed to focus on and provide availability even in event of network partition. The system's API provides a simple \textit{get(key)} and \textit{put(key, value)} functionality. 
+
+\par In order to provide the always write functionality, the system extensively makes use of the object versioning. Even in the event of network partitioning, the users can write to the system. The conflicts that arise after the partition merge are sometimes offloaded to user for resolving. The system also makes use of Consistent Hashing to determine the location of the nodes on the ring and the position of the key for the data to be stored. The node is responsible keys lying between himself and its successor. The system realizes the bias introduced by the consistent hash in terms of uneven load on different nodes. In order to resolve this, it uses a modified version of consistent hash in which the a node is assigned to multiple positions in the ring. In this way, the node becomes host for multiple regions in the ring.
+\par In order to search for a particular key, the consistent hash reveals the position of the key on the ring. The request is then routed to the node responsible the key. 
+
 
 \section{ElasticSearch and Solr}
 
