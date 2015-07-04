@@ -383,9 +383,15 @@ the following subsections.
 
 
 \section{Overlay Network}
+In this section, we will briefly discuss about the overlay network over which the system is built. The two main components used to construct the overlay network are as follows: 
+
+\subsection{Gossiping}
+The system runs over a simple gossiping protocol which forms the basis for the overlay topology management. The gossiping protocol is inspired from the Peer Sampling Service[reference] which provides each peer with a list of other peers in the system which is a uniform random sample of all the peers. The peers then exchange information with other peer selected from the list based on some well defined policies. The gossiping protocol are generally used in information dissemination, scalability, churn management etc.
 
 
-\section{Network Partition Merge}
+\subsection{Structured Overlay}
+
+Gradient[reference] which is a class of structured P2P overlays forms the basis for the overlay of the system. In this overlay, the nodes select there neighbors based on a well defined preference function. The preference function used in case of the prototype developed as part of thesis is explained in detail in the later sections [Mention Section]. The uniform random sample from the \textit{Peer Sampling Service} is fed into the Gradient. Based on the preference function the node select the best peer to exchange information with. In this way, the structured overlay is constructed and maintained.
 
 
 \section{Architecture}
@@ -600,6 +606,10 @@ In this section, we will be discussing the concept of \textit{latency variabilit
 \end{itemize}
 
 
+\section{Network Partition Merge}
+
+
+
 \chapter{Implementation}
 \label{sec:impl}
 
@@ -620,6 +630,8 @@ As part of current implementation, the \textit{Sweep} prototype supports the fol
 \item \textit{search-entry (name)}
 
 \end{itemize}
+
+
 
 
 \chapter{Evaluations}
