@@ -54,6 +54,7 @@
 \usepackage{caption}
 \usepackage{hyperref}
 \graphicspath{ {images/} }
+\usepackage[many]{tcolorbox}
 \usepackage{subcaption}
 \usepackage{balance}  % for  \balance command ON LAST PAGE  (only there!)
 \usepackage{pdfpages}
@@ -129,8 +130,8 @@
 %%----------------------------------------------------------------------------
 %%   pcap2tex stuff
 %%----------------------------------------------------------------------------
- \usepackage[dvipsnames*,svgnames]{xcolor} %% For extended colors
- \usepackage{tikz}
+% \usepackage[dvipsnames*,svgnames]{xcolor} %% For extended colors
+% \usepackage{tikz}
  \usetikzlibrary{arrows,decorations.pathmorphing,backgrounds,fit,positioning,calc,shapes}
 % \usepackage{pgfmath}	% --math engine
 %%----------------------------------------------------------------------------
@@ -314,7 +315,7 @@ This section will present a brief introduction about the full text search and di
 
 \section{Apache Lucene}
 
-Apache Lucene [reference] is a robust and an extremely fast Java Library which was written by Doug Cutting in 1999. It is mainly used for \textit{full text searching}. Lucene has been thoroughly tested and is used by companies like Twitter[reference] and ElasticSearch[reference] to provide with full text search. At the core of Lucene is concept of Index containing Documents. Documents are mainly containers of information that needs to be indexed. Its the responsibility of the application to construct the Document by adding the data as fields in it. The ability to treat Documents as collection of fields with text is main reason behind the powerful nature of Lucene. This allows user to index files of any format like PDF, HTML, Excel etc. 
+Apache Lucene [reference] is a robust and an extremely fast Java Library which was written by Doug Cutting in the year 1999. It is mainly used for \textit{full text searching}. Lucene has been thoroughly tested and is used by companies like Twitter[reference] and ElasticSearch[reference] to provide with full text search. At the core of Lucene is concept of Index containing Documents. Documents are mainly containers of information that needs to be indexed. Its the responsibility of the application to construct the Document by adding the data as fields in it. The ability to treat Documents as collection of fields with text is main reason behind the powerful nature of Lucene. This allows user to index files of any format like PDF, HTML, Excel etc. 
 
 \section{Kompics}
 Kompics[reference] is an \textit{Asynchronous Message Passing} framework based on Component Model. The main purpose of Kompics is to simplify the development of complex distributed applications by leveraging multi-core machines and providing a robust simulation framework with capability of providing reproducible results. 
@@ -400,10 +401,19 @@ Gradient[reference] which is a class of structured P2P overlays forms the basis 
 
 \section{Architecture}
 
+The actual structure of a distirbuted search engine is usually complex. It involves modules for the request routing, leader election, overlay management, load balancing and searching the data.Figure \ref{fig:architecture} depicts a high level view of the system involving routing requests to specific shards based on the category. In this section we will look at the 
+
+\begin{figure}[h]
+	\includegraphics[width=10cm, height=12cm]{architecture}
+	\centering
+	\caption{Architectural Overview}
+	\label{fig:architecture}
+\end{figure}
+
 \subsection{Leader Election Protocol}
 
 In context of distributed systems various leader election protocols have been discussed {several references}. Election of leader for a group of nodes in the system typically requires all the nodes to agree upon the leader. Once the leader gets elected, it coordinates between the nodes and helps the group to move forward. 
-\par As mentioned above, all the nodes usually need to know about the node that would be elected as leader but in case of large scale system it would usually result in huge traffic in the system. As part of this research, we introduced a weaker form of leader election protocol known as \textit{Leader Selection}. As part of this protocol, we select a group of \textit{top K} nodes in the system. The node which has the highest utility among the K members tries to assert itself as the leader. The node in order to become the leader asks for promises from the other nodes in the selected group. In case, the nodes see anybody above the node rejects the promise. The requesting only moves to the commit phase after receiving promises from all the nodes in the group. In case any one of them rejects, the node resets the convergence counter and waits for the system to stabalize again. 
+\par As mentioned above, all the nodes usually need to know about the node that would be elected as leader but in case of large scale system it would usually result in huge traffic in the system. As part of this research, we introduced a weaker form of leader election protocol known as \textit{Leader Selection}. As part of this protocol, we select a group of \textit{top K} nodes in the system. The node which has the highest utility among the K members tries to assert itself as the leader. Figure \ref{fig:p-arrange} provides a general overview of the system in which the top nodes are located at the center and as we go towards the leaf the utility decreases depicted with the color gradient. The node, in order to become the leader asks for promises from the other nodes in the selected group. In case, the nodes see anybody above the node rejects the promise. The requesting only moves to the commit phase after receiving promises from all the nodes in the group. In case any one of them rejects, the node resets the convergence counter and waits for the system to stabalize again. 
 
 \par In order to better understand the mechanism, we need to look at the overlay over which the system is built. We use the Gradient topology, which is a class of P2P topology in which the nodes in the systems organize themselves in the network in such a way that the nodes with the highest utility  are concentrated at the center of the network and the nodes with low utility lies on the outer edges of the network. We use a \textit{preference function}, according to which nodes have a higher preference to form connections with the nodes which have utility higher but closer to itself with higher probability. In this way the nodes arrange themselves in the system. In addition to this, every node runs a convergence function in which it tries to calculate a percentage change in the number of neighbors. In case the change is greater than a predefined threshold \textit{D}, the node resets the convergence counter. On the other hand, if the change is below the threshold the node increments the counter. 
 \par The node only tries to assert itself the leader, when the convergence counter has reached a certain value and the node based on its own utility sees no other node above it. It is then the node starts the promise round with the other K nodes. This process of determining if self node is a leader is carried out by every node in every shard in the system. Eventually the leader gets elected for every shard. In addition to leader, every shard also has a follower group selected by the leader itself. The purpose of the follower group is to help the leader with the replication of the commands and the steps taken by the leader. In case the leader dies, the next higher node usually from the follower group takes over the leadership for that shard. The main functionality of the members of the followers group is as follows:
@@ -423,6 +433,14 @@ In context of distributed systems various leader election protocols have been di
 As part of the leader selection mechanism, we try to elect a leader as soon as possible. In a very dynamic system where nodes can join and leave the system, it is very much possible that a better node comes along and try to assert itself as a leader thus violating the safety condition of having only a single leader per shard in the system. In order to prevent this, when a node gets elected as the leader, it along with the chosen follower group, artificially augments the utility by switching on the leader memebership check. This check places the group at the center of the shard. In this way when a better node comes along, it cannot instantaneously start the election protoco because it's self membership check is switched off and it sees the current group as better than himself. 
 
 \par This feature of artifically increasing the utility might lead to violation of fairness protocol, meaning that a node which became a leader initially, can become the leader for eternity in case the group membership check is not switched off. Therefore, it is the responsibility of the leader to locally switch off the leader group membership check and then look at the neighboring samples. In case the leader finds a better node, the leader simply backs of by terminating its membership. The follower group detects it and removes themselves from the group membership. The better node detects this and then starts the promise round itself and takes over the leadership for the current shard.
+
+\begin{figure}[h]
+	\includegraphics[scale=0.5]{p2p}
+	\centering
+	\caption{Peer Arrangement}
+	\label{fig:p-arrange}
+\end{figure}
+
 
 \begin{algorithm}[h]
 \caption{Eventual Leader Selection - Leader} 
@@ -612,6 +630,33 @@ In this section, we will be discussing the concept of \textit{latency variabilit
 
 \section{Network Partition Merge}
 
+\subsection{Entry Identifier Structure}
+The structure of the identifier used by the system to handle the entries is mainly composed of three parts. 
+
+\begin{tcolorbox}
+Epoch Structure: \textless Epoch, LeaderId, EntryId \textgreater
+\end{tcolorbox}
+
+The epoch is simply a counter which a peer when elected as the leader checks the epoch of the previous leader, increments it and then starts adding the entries in the system with the updated epoch. The second component i.e. leaderid is simply the node identifier which the peer joins the system. An invariant that we maintain is that in a system is that each peer joins the system with a different identifier. Therefore at any given time in the system, there won't be any two nodes with the same  identifier. The reason behind the invariant is that the identifier of the node act as tie breaker in the preference function used to provide total ordering on the nodes.
+
+\par Each leader starts committing the entries with a predefined starting value of the entry id which gets incremented on every subsequent entry add. The main reason behind using this identifier structure is to enable creation of dense spaces. The epoch identifier helps the system to evolve and move forward.
+
+
+\subsection{Leader Unit}
+A collection of entries added by a leader in a particular epoch is termed as a \textit{leader unit}. Each leader within a particular epoch can add only a predefined amount of entries. As the number of entries reaches the threshold, the leader needs to perform a mandatory epoch switch. 
+
+\begin{tcolorbox}
+Leader Unit Structure: \textless Epoch, LeaderId, MaxEntries \textgreater
+\end{tcolorbox}
+
+\subsection{Marker Entry}
+Before a leader can start committing entries in a particular epoch, it needs to inform the other nodes in the shard about the epoch switchd. The leader needs to make a \textit{marker entry} commit which will indicate the other nodes about the starting of the new epoch. The marker entry commit contains the maximum number of entries added by the previous leader. The current leader analyzes in its data storage module to calculate the entries added in the previous epoch. This information is committed to the leader group nodes which gets propagated to the system through the pull protocol.
+
+\subsection{Timeline}
+As the system is dynamic any node can join and leave the system. In case the system has evolved enough and a new node joins the system, the new nodes also needs to pull entries from the neighbouring nodes and evolve in the same manner to reach the stage at which the other nodes are present. Therefore the other nodes needs to keep track of the leader unit history. The timeline is an abstraction which mainly keeps track of the evolution of the system in terms of leader units added. Whenever a new leader unit switch happens, the update needs to happen in the timeline regrading the previous and current leader units. In addition to this, the timeline also keeps track of the current leader unit being pulled by a node and identify the next leader units based on the current unit which is used during the control pull requiring the next leader units added in the system.
+
+\par In order for the timeline to function correctly, an invariant that we maintain is that a node will not add a leader unit out of order, meaning that the leader units will always be added in the timeline based on increasing epochs. In case a jump is seen in the  epoch identifier, the leader unit is buffered till the in order leader units are pulled.
+The reason behind maintaining this invariant is to prevent creation of entry gaps.
 
 
 \chapter{Implementation}
