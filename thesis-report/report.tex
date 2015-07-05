@@ -681,6 +681,12 @@ As part of current implementation, the \textit{Sweep} prototype supports the fol
 \end{itemize}
 
 
+\subsection{Timeline}
+The timeline abstraction mainly used to keep track of the leader units in the system. As mentioned earlier in Section [reference], an invariant maintained is that the leader units are not added out of order. In section we will briefly explain the main reason behind the invariant. 
+
+\par The timeline is basically an in memory list. Each node using the control pull protocol, requests the nodes higher about the next leader units added in the system based on the last leader unit added to the timeline. Once the next leader units are verified, the application tries to add the leader units to the timeline. The timeline buffers the unit updates which are not in order. Under normal functioning, if the last leader unit in the timeline has epoch value \textit{X}, the next leader unit that the timeline will allow will be with value \textit{X+1}. Once the timeline fetches and incorporates the leader units, this information is supplied back to the application. The \textit{Entry Pull Protocol} needs to know about the next leader unit which needs to be pulled. Once a particular leader unit is pulled from the higher nodes completely, the node switches to the next unit provided by the application.
+
+\par The leader units can contain maximum of \textit{N entries}. Therefore the leader units added to the timeline can have different maximum entries. In case a node is allowed to pull out of order leader units, the leader unit will be picked up by the index pull protocol in the application. In case the number of entries in the unit are large, it can result in the node's utility being increased in higher proportion as compared to nodes which are pulling in order if the units they are pulling are having low maximum entries. This might result for the node to start its own voting protocol to become a leader for the shard. In case the node succeeds, it will be have entry gaps and won't be able to pull it from any other node as the node itself is the leader and doesn't have any higher utility node. Therefore, we maintain the invariant in which the timeline will not add and serve leader units out of order. 
 
 
 \chapter{Evaluations}
