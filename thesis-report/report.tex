@@ -352,7 +352,15 @@ Dynamo[reference] is Amazon's highly available key value store. The system is de
 \par In order to search for a particular key, the consistent hash reveals the position of the key on the ring. The request is then routed to the node responsible the key. 
 
 
-\section{ElasticSearch and Solr}
+\section{ElasticSearch}
+
+Elasticsearch[reference] is a distributed, scalable and real time search engine which is built over Apache Lucene. Elasticsearch provides full-text search and analytics. It has been widely used for indexing and searching documents over popular websites like Soundcloud[reference], Github[reference], Wikipedia[reference], StackOverflow etc. The steps to install the Elasticsearch server is relatively easy and the product ships with a predefined configuration which can be used to execute the elasticsearch instance over a single node. Each node in elasticsearch belongs to a cluster with a unique name which can be easily set in the configuration file during bootup. This cluster name is used to discover other nodes in the network.
+
+\section{Solr}
+
+Solr[reference] is an enterprise search server built by Apache allows user to index and search documents using REST like API. It is also powered by Lucene and therefore supports full text search. Solr is built over Apache's Zookeeper which makes it easy to scale up and down.
+
+
 
 \chapter{Method}
 \label{chap:method}
