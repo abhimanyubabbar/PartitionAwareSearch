@@ -715,12 +715,16 @@ The information about the new leader units that are incorporated in the timeline
 
 
 
-
 \begin{figure}[h]
 	\includegraphics[scale=0.5]{timeline}
 	\caption{Timeline Evolution}
 	\label{fig:timeline}
 \end{figure}
+
+\subsubsection{Skip Leader Units}
+
+When a peer receives sharding update, the entry pull abstraction might currently be pulling a leader unit that is behind the sharding update or might have have already pulled all leader units before the sharding update. In any case, each peer gives priority to the sharding update. It pauses the current ongoing pull mechanism and analyzes the leader units that would have to be removed in case the node applies the update. Therefore node could realize that the leader units that lying between the current unit that is being pulled and the sharding update are no longer required to be pulled as after applying the sharding update, these units would be removed.
+\par The application needs to inform the entry pull protocol to skip some of the leader units. Therefore each leader unit is provided with a status field which if set to \textit{SKIP} will be jumped over by the entry pull protocol. The application updates the timeline by updating the leader units that needs to be skipped by setting the status to \textit{SKIP}. Each peer has it's own set of leader units that needs to be skipped depending upon the units already pulled and units remaining between the last pulled and the sharding update. In best case scenario, the node could have pulled till the leader unit that will not be removed and the remaining ones needs to be Skipped. On the other hand, a node could have already pulled all the leader units that would have to removed after sharding.
 
 
 
