@@ -286,23 +286,44 @@ This document requires readers to be familiar with terms and concepts described 
 \label{sec:problem_description}
 
 
-
-
 \section{Problem context}
 \label{sec:problem_context}
 
 
+\section{Contribution}
+\label{sec: contribution}
 
-\section{Structure of this thesis}
+The main aim of the thesis is to come up with up with a approach for creating a \textit{Full Text Decentralized Search} engine. The main contribution of the thesis is as follows:
+
+\begin{itemize}
+	\item Design and implementation of a full text decentralized search engine.
+	\item Design and implementation of a weaker form of leader election protocol to elect a trusted node for a particular shard which would be responsible for implementing the decisions like addition, deletion and updation of entries in the system.
+	\item Designing a basic approach for the detection of the network partition and merge during the partition healing.
+		
+\end{itemize}
+
+
+
+\section{Structure of thesis}
 \label{sec:thesis_structure}
 
-Chapter \ref{chap:introduction} describes the problem and its context.
-Chapter \ref{chap:background} provides the background necessary to understand the
-problem and the specific knowledge that the reader will need to understand the
-rest of this thesis. Following this Chapter \ref{chap:method} describes the
-goals, metrics, and solution proposed in this thesis project. The solution is
-analyzed and evalued in Chapter \ref{chap:analysis}. Finally, Chapter
-\ref{chap:conclusion} offers some conclusions and suggests future work.
+\begin{itemize}
+
+\item[] \textbf{Chapter \ref{chap:introduction}:Introduction} : This chapter provides an introduction into the topic of the thesis and motivation behind it.
+
+\item[] \textbf{Chapter \ref{chap:background}:Background}: This chapter provides necessary background to understand the rest of the thesis.
+
+\item[] \textbf{Chapter \ref{chap:related_work}:Related Work}: In this chapter we will provide brief introduction about the related work done in the field of thesis.
+
+\item[] \textbf{Chapter \ref{chap:design}:Design}: This chapter describes the basic design and the architecture of the system developed as part of thesis.
+
+\item[] \textbf{Chapter \ref{chap:impl}:Implementation}: Basic implementation of the system is briefly explained in the chapter.
+
+\item[] \textbf{Chapter \ref{chap:eval}:Evaluations}: Results of testing the system on various parameters and different scenarios is mentioned and described in this section.
+
+\item[] \textbf{Chapter \ref{chap:conclusion}:Conclusion}: We conclude the thesis by providing the limitations of the current implementation along with the suggestions for the future work.
+
+\end{itemize}
 
 
 \chapter{Background}
@@ -337,7 +358,7 @@ Eric Brewer in the year 2000 put forward his opinion that in a distributed syste
 
 
 \chapter{Related Work}
-\label{sec:related_work}
+\label{chap:related_work}
 
 
 
@@ -378,7 +399,7 @@ Solr[reference] is an enterprise search server built by Apache allows user to in
 
 
 \chapter{Design and Architecture}
-\label{sec:design}
+\label{chap:design}
 
 \section{System Model}
 
@@ -619,6 +640,7 @@ Initially the information of a node becoming a leader is only published at the l
 
 As the system evolves, the leader receives request for adding new entries in the system. Using basic replication strategies the leader commits the entries to the leader group which then gets replicated to all the nodes in the shard using pull protocol. The system has a predefined \textit{MaxShardSize} parameter. When the entries grow beyond the count, the leader then initiates \textit{ShardSplit} protocol. As part of this protocol, each peer based on its identifier and its depth which is basically number of shard splits seen by the node, decides the next shard id. 
 \par Before initiating the two phase commit of the shard split, the leader stops handling the entry additions. It then looks in its local lucene store and after sorting the entries based on there identifiers, calculates the split point. This meta information is then committed to the leader group nodes along with the shard split update as a part of two phase commit. Once the information is pulled by other peers in the system, based on there new shardId, they decide to remove all the entries either before or after the split point. The peers then join the other peers in there respective shards. 
+
 \par It might be argued that after the shard split, the entries get divided, so the search results might not be complete. It order to prevent this, each peer has a \textit{routing table} which keeps references to the peers in other shards. The table gets populated and updated by our \textit{Peer Sampling Service} which provides peers with random samples from different shards. Upon receiving shard request, the peer simply forwards the request to the peers in the other shards.
 
 
@@ -629,46 +651,9 @@ In this section, we will be discussing the concept of \textit{latency variabilit
 
 \par Google uses a lot of inovative approaches to solve issue of latency variability as mentioned by Jeffery Dean in this talk[reference jeff dean]. The approach that we are interested and have adapted for our prototype involves instead of sending to a single node in every shard the search request, we send it to a predefined number of nodes in that shard. We simply wait for the first response from that shard and discard the rest. The purpose behind it is to reduce the dependency on the slow performing node by replicating the request to other nodes within the same shard. Once all the shards have responded or search timed out, we collect, filter and augment the results with some metadata. This data is then returned to the requesting node. In this way the system makes significant steps towards preventing long tail in the response times during the search request.
 
-\begin{itemize}
-
-\item Application Entries.
-
-\end{itemize}
-
-
-\section{Network Partition Merge}
-
-\subsection{Entry Identifier Structure}
-The structure of the identifier used by the system to handle the entries is mainly composed of three parts. 
-
-\begin{tcolorbox}
-Epoch Structure: \textless Epoch, LeaderId, EntryId \textgreater
-\end{tcolorbox}
-
-The epoch is simply a counter which a peer when elected as the leader checks the epoch of the previous leader, increments it and then starts adding the entries in the system with the updated epoch. The second component i.e. leaderid is simply the node identifier which the peer joins the system. An invariant that we maintain is that in a system is that each peer joins the system with a different identifier. Therefore at any given time in the system, there won't be any two nodes with the same  identifier. The reason behind the invariant is that the identifier of the node act as tie breaker in the preference function used to provide total ordering on the nodes.
-
-\par Each leader starts committing the entries with a predefined starting value of the entry id which gets incremented on every subsequent entry add. The main reason behind using this identifier structure is to enable creation of dense spaces. The epoch identifier helps the system to evolve and move forward.
-
-
-\subsection{Leader Unit}
-A collection of entries added by a leader in a particular epoch is termed as a \textit{leader unit}. Each leader within a particular epoch can add only a predefined amount of entries. As the number of entries reaches the threshold, the leader needs to perform a mandatory epoch switch. 
-
-\begin{tcolorbox}
-Leader Unit Structure: \textless Epoch, LeaderId, MaxEntries \textgreater
-\end{tcolorbox}
-
-\subsection{Marker Entry}
-Before a leader can start committing entries in a particular epoch, it needs to inform the other nodes in the shard about the epoch switchd. The leader needs to make a \textit{marker entry} commit which will indicate the other nodes about the starting of the new epoch. The marker entry commit contains the maximum number of entries added by the previous leader. The current leader analyzes in its data storage module to calculate the entries added in the previous epoch. This information is committed to the leader group nodes which gets propagated to the system through the pull protocol.
-
-\subsection{Timeline}
-As the system is dynamic any node can join and leave the system. In case the system has evolved enough and a new node joins the system, the new nodes also needs to pull entries from the neighbouring nodes and evolve in the same manner to reach the stage at which the other nodes are present. Therefore the other nodes needs to keep track of the leader unit history. The timeline is an abstraction which mainly keeps track of the evolution of the system in terms of leader units added. Whenever a new leader unit switch happens, the update needs to happen in the timeline regrading the previous and current leader units. In addition to this, the timeline also keeps track of the current leader unit being pulled by a node and identify the next leader units based on the current unit which is used during the control pull requiring the next leader units added in the system.
-
-\par In order for the timeline to function correctly, an invariant that we maintain is that a node will not add a leader unit out of order, meaning that the leader units will always be added in the timeline based on increasing epochs. In case a jump is seen in the  epoch identifier, the leader unit is buffered till the in order leader units are pulled.
-The reason behind maintaining this invariant is to prevent creation of entry gaps.
-
 
 \chapter{Implementation}
-\label{sec:impl}
+\label{chap:impl}
 
 In order to check for the viability of the theoretical approach we worked on developing a prototype on the principles stated in the design section. The prototype used Apache Lucene for storing and indexing data. In addition to this, the prototype was developed using the Kompics which is an asynchronous message passing system. The main sweep process on each node in the system is composed of following abstractions: \textit {group membership, routing, leader election} and \textit{data storage} abstraction . All the modules interact with the \textit{network} and \textit{timer} abstraction which are used to send messages over UDP and configure local timeouts respectively. In addition to this, we have a \textit{message chunking} abstraction which as name suggests check the messages going over the network and in case the message exceeds the max transmission limit, fragments the packet and at the receiving end joins the fragments to construct the final message. All the abstractions are built from scratch in Java.
 \par The main application module interacts with the above mentioned abstractions. It is responsible for \textit{Indexing} and \textit{Searching} of the documents in the system. In case a node receives a request for adding an entry in the system, the module firstly check whether the node is the leader for the current shard. In case it is the leader, it invokes the entry addition routine on self. Otherwise, it sends the request to the routing module to route the request to the leader. As part of current implementation, the entry addition routine is a synchronous operation which involves performing a two phase commit by the leader over the leader group nodes. In order to commit the entry the application module interacts with the data module to perform add the entry in the lucene. Once the entry gets replicated, the leader responds back to the node on which the request originated. 
@@ -689,6 +674,46 @@ As part of current implementation, the \textit{Sweep} prototype supports the fol
 \end{itemize}
 
 
+\section{Entry Semantics}
+
+\subsection{Entry Identifier Structure}
+The structure of the identifier used by the system to handle the entries is mainly composed of three parts. 
+
+\begin{tcolorbox}
+Epoch Structure: \textless Epoch, LeaderId, EntryId \textgreater
+\end{tcolorbox}
+
+The epoch is simply a counter. A peer when elected as the leader checks the epoch of the previous leader, increments it and then starts adding the entries in the system with the updated epoch. The second component i.e. leaderid is the identifier with which the peer joins the system. An invariant that we maintain is that each peer joins the system with a different identifier. Therefore at any given time in the system, there won't be any two nodes with the same  identifier. The reason behind the invariant is that the identifier of the node act as tie breaker in the preference function used to provide total ordering on the nodes.
+
+\par Each leader starts committing the entries with a predefined starting value of the entry id which gets incremented on every subsequent entry add. Apart from this, the epoch identifier helps the system to evolve and move forward.
+
+\par The main reason behind the use of the identifier structure is to enable creation of dense spaces. The requirement of dense space arise because of the issue of network partitioning. In a dynamic system which aims to run at hundreds of commodity machines, at any given time the nodes might be failing or the switches between the components might be broken. It can very well result in a network partition. As the system is self stabalizing, the nodes in the other partition will elect a new leader and evolve accordingly. When the partition heals and merge happens, we can now easily merge back the entries added in both the partitions because of these dense spaces. In order to better understand this, we can look at scenario in which there is a case of network partition and the each partition has elected its own leader. Let's say the identifier of two leaders are \textit{X and Y}. We also assume that both the leaders are operating in epoch \textit{E}. The entries added in this epoch are assigned entry identifier  incrementally starting from zero.
+
+\par In case of healing of partition, even though two entries might have same epoch and entry identifier but will always have different leader identifier as each partition had different leaders. In this way, the use of these dense spaces potentially help in differentiating the entries after the healing of network partition. 
+
+
+\subsection{Leader Unit}
+A collection of entries added by a leader in a particular epoch is termed as a \textit{leader unit}. Each leader within a particular epoch can add only a predefined amount of entries. As the number of entries reaches the threshold, the leader needs to perform a mandatory epoch switch. 
+
+\begin{tcolorbox}
+Leader Unit Structure: \textless Epoch, LeaderId, MaxEntries \textgreater
+\end{tcolorbox}
+
+We limit the entries that a peer which is acting as a leader can add in order to balance the load on the newly created shards after sharding. As already explained in the section[reference], during sharding phase, the leader calculates the split point identifier. It then performs a two phase commit over the leader group which gets pulled by other peers in the system. 
+
+
+
+\subsection{Marker Entry}
+Before a leader can start committing entries in a particular epoch, it needs to inform the other nodes in the shard about the epoch switchd. The leader needs to make a \textit{marker entry} commit which will indicate the other nodes about the starting of the new epoch. The marker entry commit contains the maximum number of entries added by the previous leader. The current leader analyzes in its data storage module to calculate the entries added in the previous epoch. This information is committed to the leader group nodes which gets propagated to the system through the pull protocol.
+
+\subsection{Timeline}
+As the system is dynamic any node can join and leave the system. In case the system has evolved enough and a new node joins the system, the new nodes also needs to pull entries from the neighbouring nodes and evolve in the same manner to reach the stage at which the other nodes are present. Therefore the other nodes needs to keep track of the leader unit history. The timeline is an abstraction which mainly keeps track of the evolution of the system in terms of leader units added. Whenever a new leader unit switch happens, the update needs to happen in the timeline regrading the previous and current leader units. In addition to this, the timeline also keeps track of the current leader unit being pulled by a node and identify the next leader units based on the current unit which is used during the control pull requiring the next leader units added in the system.
+
+\par In order for the timeline to function correctly, an invariant that we maintain is that a node will not add a leader unit out of order, meaning that the leader units will always be added in the timeline based on increasing epochs. In case a jump is seen in the  epoch identifier, the leader unit is buffered till the in order leader units are pulled.
+The reason behind maintaining this invariant is to prevent creation of entry gaps.
+
+
+
 \subsection{Timeline}
 The timeline abstraction mainly used to keep track of the leader units in the system. As mentioned earlier in Section [reference], an invariant maintained is that the leader units are not added out of order. In section we will briefly explain the main reason behind the invariant. 
 
@@ -698,7 +723,7 @@ The timeline abstraction mainly used to keep track of the leader units in the sy
 
 
 \chapter{Evaluations}
-\label{sec:eval}
+\label{chap:eval}
 
 In this section we will be writing about the various experiments that were performed.
 
