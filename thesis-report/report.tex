@@ -227,8 +227,12 @@
 \label{sec:abstract}
 \setcounter{page}{1}
 
+Decentralized full-text search is still an unsolved problem in peer-to-peer research. In this paper, we introduce Sweep, a fully decentralized full-text search engine, that takes significant steps towards providing reliable, low-latency, and accurate search results. Sweep is built on Apache Lucene and each peer maintains a replica of a bounded-size subset
+of the whole search index. Full-text search involves a fan-out search
+to each shard, with latency variance reduction techniques to
+help achieve low response times. Our main contributions include a novel gossip-based protocol for fast and efficient replication of the search index and a protocol for the automated sharding of the search index. Our approach is based on a low overhead gossip-based leader selection algorithm within each shard, whose cost is independent of the number of peers. For each shard, peers add new index entries to the leader group, and peers securely pull updates within their shard using a Gradient topology that ensures efficient dissemination of updates in log(N) hops within the shard. We show in simulation the viability of our approach and its robustness to failures and flash crowds.
 
-Your abstract here.
+
 
 \end{abstract}
 %%\clearpage
@@ -279,15 +283,7 @@ This document requires readers to be familiar with terms and concepts described 
 \label{chap:introduction}
 %% Longer problem statement
 %% General introduction to the area
-
-
-
-\section{Problem description}
-\label{sec:problem_description}
-
-
-\section{Problem context}
-\label{sec:problem_context}
+Full-text search is the de-facto standard for information discovery on the Internet. From google to piratebay, Internet users have learnt how to query in natural language to find information of interest to them. Currently, there is no decentralized, full-text search service available for the open Internet. Some of the main research challenges in building such a system include how to make a reliable search service using unreliable peers and an unreliable network, how to ensure predictable low-latency responses on a network with varying, unpredictable network bandwidth and latencies, how to ensure both the completeness and integrity of the search index at each peer, and how to ensure the search index can grow in size without degrading search performance. Sweep is a decentralized full-text search system that addresses these challenges. It is designed to be a peer-to-peer search engine that can be managed by a small number of trusted peers. The trusted peers, or leaders, are responsible for shards (partitions of the search index) and accept additions, deletions, and updates to the search index. We do not mandate a trust model, but anything from from a static pre-defined set of peers to a dynamically changing set of leaders backed by a computational trust model is possible. Compared to allowing index entries to be inserted at any node, our model simplifies the problems of access control and search index pollution. All peers respond to search queries by maintaining a replica of a subset of the whole search index. The index automatically shards whenever the size of a shard exceeds a system- defined threshold. That is, we bound the size of the search index at each peer to help bound the storage and bandwidth costs at individual peers. A search query is sent to all shards, and the client merges the results before presenting them to the user. In fact, redundant queries are sent to all shards, with the first responders from each shard returning with high probability in sub second time. Such latency variance reduction techniques that trade off higher bandwidth for reduced search latency are becoming increasigly viable due to ever improving consumer network bandwidth.
 
 
 \section{Contribution}
@@ -383,14 +379,8 @@ Solr[reference] is an enterprise search server built by Apache allows user to in
 
 
 
-\chapter{Method}
-\label{chap:method}
-
 %% What are your goals? (What should you be able to do as a result of your solution - which couldn't be done well before you started?)
 %%  What you are going to do? Why?
-
-\chapter{Analysis}
-\label{chap:analysis}
 
 %% How you are going to evaluate what you have done?
 %% Analysis of your data and proposed solution
@@ -865,48 +855,8 @@ As part of this experiment we started with 200 nodes in the system and loaded th
 \chapter{Conclusions}
 \label{chap:conclusion}
 
-This chapter explains the conclusions obtained throughout the design,
-development, and evaluation described in this thesis and proposes a number of
-improvements, extensions, or complements that may be of interest in order to
-continue this work. Page filling text mass. Page filling text mass. Page
-filling text mass. Page filling text mass. Page filling text mass. Page
-filling text mass. Page filling text mass. Page filling text mass. Page
-filling text mass. Page filling text mass. Page filling text mass.
-
-\section{Conclusion}
-%% Did you meet your goals?
-%% What insights have you gained?
-%% What suggestions can you give to others working in this area?
-%% If you had it to do again, what would you have done differently?
-
-
-In this section we will state the conclusions and insights gained as result of this thesis project.
-
-\subsection{Goals}
-\label{ssec:goals}
-
-The project met five of the ten initial goals. With the third goal not
-addressed at all and goals 6-10 only partially met. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass.
-
-
-\subsection{Insights and suggestions for further work}
-\label{ssec:insights-and-suggestions}
-
-One of the most important insights to come from this work is the need to
-understand the interaction between the IP layer and the link
-layer. Unfortunately I did not have time to examine this in detail in this
-thesis. However, the data shows that paying attention to this APR cache
-flushing patterns could yield improved performance. Future works should start
-by measuring the relationship between the cache validity and number of packets
-which are generated at or above the IP layer, but not transmitted on the
-network.  Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass.
+As part of this thesis, we introduced Sweep, a full text decentralized peer to peer search system. The overlay over which the system is built is based on gradient topology. The topology is based on a preference function to provide total order on the peers. This overlay network is turn used by peers to elect leader for each shard. In addition to this, each peer uses pull protocols to fetch the information being added in the system. 
+\par The system is maintained and controlled by a small and fixed number of peers in each shard. Latency variability over the large fanout during the search is resolved by sending the request to more than one node in each shard.
 
 \section{Future work}
 \label{sec:future-work}
@@ -914,63 +864,26 @@ mass. Page filling text mass. Page filling text mass.
 %% What are the next obvious things to be done?
 %% What hints can you give to the next person who is going to followup upon your work?
 
+The thesis presents a prototype implementation for the full text decentralized search based on Apache Lucene. As the system is composed of many independent components, there exists edge cases which are not yet handled.
 
-Due to the breadth of the problem, only some of the initial goals have been
-met. In these section we will focus on some of the remaining issues that
-should be addressed in future work. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text mass.
+\subsection{Edge Case Identification}
+As the system is asynchronous and composed of various components, each working independently of the other, certain edge cases exists for which the handling has not been defined. The priority will be to identify these cases and then handle them correctly. In addition to this, semantics of the fault handling and resolution is not defined. For now, in case of a fault like unable to write to data storage or individual components crashing, we simply throw an exception and crash the peer. This results in a poor user experience and therefore better fault handling and resolution needs to be carried out.
 
-\subsection{What has been left undone?}
-\label{what-has-been-left-undone}
+\subsection{Pagination}
+The search request initiated by the client is sent out by the application to the peers in other shards. Only a subset of the responses that are received back from the peers in different shards are sent to the client. This is done to prevent overloading the network. In future, we would like to implement pagination in which responses regarding the initial pages will be sent to the client. If the clients want to see more responses by clicking on next page, it would fire another query with the same search pattern but a different page number which would indicate the application to skip the initial responses and sent back the next batch of matching responses.
 
-The prototype does not address the third requirement, i.e., a yearly
-unavailability of less than 3 minutes, this remains an open problem.  Page
-filling text mass. Page filling text mass. Page filling text mass. Page
-filling text mass. Page filling text mass. Page filling text mass. Page
-filling text mass. Page filling text mass. Page filling text mass. Page
-filling text mass. Page filling text mass.
-
-\subsubsection{Cost analysis}
-
-The current prototype works, but the performance from a cost perspective makes
-this an impractical solution. Future work must reduce the cost of this
-solution, to do so a cost analysis needs to first be done. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass.
-
-\subsubsection{Security}
-
-A future research effort is needed to address the security holes that results
-from using a self-signed certificate. Page filling text mass. Page filling
-text mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text mass.
+\subsection{Robust Sharding Protocol}
+At present, the leader generates the splitting point and then each node based on the bitwise manipulation algorithm decides to remove either the leader units above the splitting point or below it. This is a very basic approach. In future we would like to implement another bitwise manipulation algorithm which based on the metadata for each leader unit would identify the location of each leader unit after sharding.
 
 
-\subsection{Next obvious things to be done}
 
-In particular, the author of this thesis wishes to point out xxxxxx remains as
-a problem to be solved. Solving this problem is the next thing that should be
-done. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass. Page filling text
-mass. Page filling text mass. Page filling text mass.
-
-\section{Required Reflections}
-\label{sec:req-reflections}
-
-
-\bibliography{report}
+%\bibliography{report}
 %%\bibliographystyle{IEEEtran}
 %%\bibliographystyle{unsrturl}
 %%\bibliographystyle{unsrtnat}
-\bibliographystyle{myIEEEtran}
+%\bibliographystyle{•}bibliographystyle{myIEEEtran}
 \appendix
-\chapter{Insensible Approximation}
+%\chapter{Insensible Approximation}
 
 \backmatter
 
