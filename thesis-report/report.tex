@@ -227,10 +227,7 @@
 \label{sec:abstract}
 \setcounter{page}{1}
 
-Decentralized full-text search is still an unsolved problem in peer-to-peer research. In this paper, we introduce Sweep, a fully decentralized full-text search engine, that takes significant steps towards providing reliable, low-latency, and accurate search results. Sweep is built on Apache Lucene and each peer maintains a replica of a bounded-size subset
-of the whole search index. Full-text search involves a fan-out search
-to each shard, with latency variance reduction techniques to
-help achieve low response times. Our main contributions include a novel gossip-based protocol for fast and efficient replication of the search index and a protocol for the automated sharding of the search index. Our approach is based on a low overhead gossip-based leader selection algorithm within each shard, whose cost is independent of the number of peers. For each shard, peers add new index entries to the leader group, and peers securely pull updates within their shard using a Gradient topology that ensures efficient dissemination of updates in log(N) hops within the shard. We show in simulation the viability of our approach and its robustness to failures and flash crowds.
+Decentralized full-text search is still an unsolved problem in peer-to-peer research. As part of this thesis, we introduce Sweep, a fully decentralized full-text search engine built on Apache Lucene, that takes significant steps towards providing reliable, low-latency, and accurate search results.  Our main contributions include a novel gossip-based protocol for fast and efficient replication of the search index and a protocol for the automated sharding of the search index. Therefore, each peer maintains a replica of a bounded-size subset of the whole search index. Our approach is based on a low overhead gossip-based leader selection algorithm within each shard, whose cost is independent of the number of peers. For each shard, peers add new index entries to the leader group, and peers securely pull updates within their shard using a Gradient topology that ensures efficient dissemination of updates in log(N) hops within the shard. The full-text search involves a fan-out search to each shard, with latency variance reduction techniques to help achieve low response times. We show in simulation the viability of our approach and its robustness to failures and flash crowds.
 
 
 
@@ -269,12 +266,8 @@ I would like to thank my examiner \textit{Seif Haridi} and my supervisor \textit
 \begin{abbreviations}
 \label{list-of-acronyms-and-abbreviations}
 
-This document requires readers to be familiar with terms and concepts described in \mbox{RFC~1235} \cite{john_ioannidis_coherent_1991}. For clarity we summarize some of these terms and give a short description of them before presenting them in next sections.
+Acronyms and Abbreviations.
 
-\begin{basedescript}{\desclabelstyle{\pushlabel}\desclabelwidth{10em}}
-\item[IPv4]					Internet Protocol version 4 (RFC~791 \cite{postel_internet_1981})
-\item[IPv6]					Internet Protocol version 6 (RFC~2460 \cite{deering_internet_1998})
-\end{basedescript}
 \end{abbreviations}
 
 \mainmatter
@@ -327,25 +320,25 @@ The main aim of the thesis is to come up with up with a approach for creating a 
 
 %%    What does a reader (another x student -- where x is your study line) need to know to understand your report?
 %%    What have others already done?
-This section will present a brief introduction about the full text search and distributed databases. In addition to this, the decentralized search prototype is developed in Kompics[reference], so we will also be providing a brief introduction about the same. In addition to this, we will also be mentioning Git Merge protocols which is used as a motivation for the potential Network Partition Merge Strategy.
+This section will present a brief introduction about the full text search and distributed databases. In addition to this, the decentralized search prototype is developed in Kompics \cite{kompics}, so we will also be providing a brief introduction about the same. In addition to this, we will also be mentioning Git Merge protocols which is used as a motivation for the potential Network Partition Merge Strategy.
 
 
 \section{Apache Lucene}
 
-Apache Lucene [reference] is a robust and an extremely fast Java Library which was written by Doug Cutting in the year 1999. It is mainly used for \textit{full text searching}. Lucene has been thoroughly tested and is used by companies like Twitter[reference] and ElasticSearch[reference] to provide with full text search. At the core of Lucene is concept of Index containing Documents. Documents are mainly containers of information that needs to be indexed. Its the responsibility of the application to construct the Document by adding the data as fields in it. The ability to treat Documents as collection of fields with text is main reason behind the powerful nature of Lucene. This allows user to index files of any format like PDF, HTML, Excel etc. 
+Apache Lucene \cite{lucene} is a robust and an extremely fast Java Library which was written by Doug Cutting in the year 1999. It is mainly used for \textit{full text searching}. Lucene has been thoroughly tested and is used by companies like Twitter and ElasticSearch\cite{elasticsearch} to provide with full text search. At the core of Lucene is concept of Index containing Documents. Documents are mainly containers of information that needs to be indexed. Its the responsibility of the application to construct the Document by adding the data as fields in it. The ability to treat Documents as collection of fields with text is main reason behind the powerful nature of Lucene. This allows user to index files of any format like PDF, HTML, Excel etc. 
 
 \section{Kompics}
-Kompics[reference] is an \textit{Asynchronous Message Passing} framework based on Component Model. The main purpose of Kompics is to simplify the development of complex distributed applications by leveraging multi-core machines and providing a robust simulation framework with capability of providing reproducible results. 
+Kompics \cite{kompics} is an \textit{Asynchronous Message Passing} framework based on Component Model. The main purpose of Kompics is to simplify the development of complex distributed applications by leveraging multi-core machines and providing a robust simulation framework with capability of providing reproducible results. 
 \par As mentioned above, Kompics is based on a Component Model which is mainly a reactive state machine. These components execute concurrently and communicate asynchronously by message passing. These messages are known as \textit{Events} which are immutable typed objects. The information contained in these events is in form of attributes. Each component usually exposes an interface to other components known as \textit{Port}. These ports define the events that can pass through them and therefore act as filters by allowing specific events. In order to send an event between components, we need a communication medium or a link. This abstraction is known as \textit{Channel}. A channel connect ports of complimentary nature. The events sent over the channel are transferred and received by other component in FIFO order. In addition to this, each Component contains \textit{Handlers} which are first class procedures. Each handler is responsible for handling a particular type of event and gets executed when the component receives that event. The handler has capability to in turn trigger new events on other components. 
 
 
 \section{Google Search}
-Nowadays, search on web is synonymous with Google Search. It has a robust network of hardware devices and in house software that allows it to handle millions of search requests everyday. A closer look at the software infrastructure[reference gs] reveals the presence of data structure known as \textit{Inverted Index} used for indexing the documents. The index containing the documents is divided into many pieces known as shards which are distributed and handled by multiple machines. This greatly helps in improving the search response by parallelizing the requests to these multiple shards which contain a subset of data. 
+Nowadays, search on web is synonymous with Google Search. It has a robust network of hardware devices and in house software that allows it to handle millions of search requests everyday. A closer look at the software infrastructure \cite{googleArchitecture} reveals the presence of data structure known as \textit{Inverted Index} used for indexing the documents. The index containing the documents is divided into many pieces known as shards which are distributed and handled by multiple machines. This greatly helps in improving the search response by parallelizing the requests to these multiple shards which contain a subset of data. 
 \par The search request is initially handled by a DNS based load balancer which redirects the query to a nearby cluster. The query is then processed by the cluster by sending the request to multiple shards in parallel. Inside each shard a dedicated machine is responsible for handling queries. In first stage of the request, a list of doc id's matching the request is returned. The actual documents relating to these id's are fetched from the machines in the next stage. The results are sorted and returned back to the requesting node.
 
 
 \section{Git Merge}
-In this section, we will be providing a brief introduction about Git and the strategies for \textit{Branching and Merging} used in it[reference]. Git is a popular distributed version control system used to record changes made to a particular file over time[reference version control]. Git is advancement over the previous centralized version control systems like VCS[reference] and SVN[reference] in sense that users unlike checking out particular files of the project located in centralized server simply checkout the whole project. This prevents a single point of failure as the server hosting the project in case of SVN could simply crash and the users are left with snapshots of specific checked out file. Git prevents it by \textit{cloning} whole project on to the user local directory. In addition to this, Git store the data and subsequent changes as separate snapshots of files in the projects which is in contrast to the process of storing base files with snapshots of incremental changes made to that file. This feature helps in committing changes to the git locally instead of trying to reach server every time. Thus user can bundle the commits locally in case of absence of network and push them once available.
+In this section, we will be providing a brief introduction about Git and the strategies for \textit{Branching and Merging} used in it \cite{gitmerge}. Git is a popular distributed version control system used to record changes made to a particular file over time \cite{gitVersionControl}. Git is advancement over the previous centralized version control systems like CVS \cite{cvs} and SVN \cite{svn} in sense that users unlike checking out particular files of the project located in centralized server simply checkout the whole project. This prevents a single point of failure as the server hosting the project in case of SVN could simply crash and the users are left with snapshots of specific checked out file. Git prevents it by \textit{cloning} whole project on to the user local directory. In addition to this, Git store the data and subsequent changes as separate snapshots of files in the projects which is in contrast to the process of storing base files with snapshots of incremental changes made to that file. This feature helps in committing changes to the git locally instead of trying to reach server every time. Thus user can bundle the commits locally in case of absence of network and push them once available.
 \par The feature of git that makes it stand apart from its predecessors is the model used for branching and merging back. Git makes it very easy for the user to create different branches of the same project and work independently on them. In git, each commit containing changes to the files also has a unique value associated with it. In addition to this, it also has a reference to the previous commit. In this it allows user to work on a separate branch and allow it to make several commit. When the user decides to merge the data back in main branch, git looks at the \textit{HEAD} of the two branches and calculate the common ancestor. The git then calculates the changes made in both branches since the common ancestor and uses an intelligent strategy to merge and apply changes to a resultant branch. 
 
 
@@ -359,11 +352,11 @@ Eric Brewer in the year 2000 put forward his opinion that in a distributed syste
 
 
 \section{Cassandra}
-Cassandra[reference] is a highly available distributed key value system deployed for managing back-end services in Facebook. The system is developed for storing highly structured values. The system offers a simple API involving \textit{get, insert} and \textit{delete} operations.
-\par The system uses consistent hashing[reference] to identify the location of the node on the ring and data keys. A node is responsible for storing the keys which lie between the node and the successor. In order to prevent single point of failure, the keys are replicated over the \textit{N -1} successor nodes. Based on different policies for data replication, the other nodes used for replication of the key are selected. In addition to this, in case the load on a particular node increases, the system boots up separate light weight node and inject the node between the highly loaded node and its successor. As the new node joins, it becomes responsible for the keys between it and the successor.
+Cassandra \cite{cassandra} is a highly available distributed key value system deployed for managing back-end services in Facebook. The system is developed for storing highly structured values. The system offers a simple API involving \textit{get, insert} and \textit{delete} operations.
+\par The system uses consistent hashing to identify the location of the node on the ring and data keys. A node is responsible for storing the keys which lie between the node and the successor. In order to prevent single point of failure, the keys are replicated over the \textit{N -1} successor nodes. Based on different policies for data replication, the other nodes used for replication of the key are selected. In addition to this, in case the load on a particular node increases, the system boots up separate light weight node and inject the node between the highly loaded node and its successor. As the new node joins, it becomes responsible for the keys between it and the successor.
 
 \section{Dynamo}
-Dynamo[reference] is Amazon's highly available key value store. The system is designed to focus on and provide availability even in event of network partition. The system's API provides a simple \textit{get(key)} and \textit{put(key, value)} functionality. 
+Dynamo \cite{dynamo} is Amazon's highly available key value store. The system is designed to focus on and provide availability even in event of network partition. The system's API provides a simple \textit{get(key)} and \textit{put(key, value)} functionality. 
 
 \par In order to provide the always write functionality, the system extensively makes use of the object versioning. Even in the event of network partitioning, the users can write to the system. The conflicts that arise after the partition merge are sometimes offloaded to user for resolving. The system also makes use of Consistent Hashing to determine the location of the nodes on the ring and the position of the key for the data to be stored. The node is responsible keys lying between himself and its successor. The system realizes the bias introduced by the consistent hash in terms of uneven load on different nodes. In order to resolve this, it uses a modified version of consistent hash in which the a node is assigned to multiple positions in the ring. In this way, the node becomes host for multiple regions in the ring.
 \par In order to search for a particular key, the consistent hash reveals the position of the key on the ring. The request is then routed to the node responsible the key. 
@@ -371,11 +364,11 @@ Dynamo[reference] is Amazon's highly available key value store. The system is de
 
 \section{ElasticSearch}
 
-Elasticsearch[reference] is a distributed, scalable and real time search engine which is built over Apache Lucene. Elasticsearch provides full-text search and analytics. It has been widely used for indexing and searching documents over popular websites like Soundcloud[reference], Github[reference], Wikipedia[reference], StackOverflow etc. The steps to install the Elasticsearch server is relatively easy and the product ships with a predefined configuration which can be used to execute the elasticsearch instance over a single node. Each node in elasticsearch belongs to a cluster with a unique name which can be easily set in the configuration file during bootup. This cluster name is used to discover other nodes in the network.
+Elasticsearch \cite{elasticsearch} is a distributed, scalable and real time search engine which is built over Apache Lucene. Elasticsearch provides full-text search and analytics. It has been widely used for indexing and searching documents over popular websites like Soundcloud, Github, Wikipedia, StackOverflow etc. The steps to install the Elasticsearch server is relatively easy and the product ships with a predefined configuration which can be used to execute the elasticsearch instance over a single node. Each node in elasticsearch belongs to a cluster with a unique name which can be easily set in the configuration file during bootup. This cluster name is used to discover other nodes in the network.
 
 \section{Solr}
 
-Solr[reference] is an enterprise search server built by Apache allows user to index and search documents using REST like API. It is also powered by Lucene and therefore supports full text search. Solr is built over Apache's Zookeeper which makes it easy to scale up and down.
+Solr \cite{solr} is an enterprise search server built by Apache allows user to index and search documents using REST like API. It is also powered by Lucene and therefore supports full text search. Solr is built over Apache's Zookeeper which makes it easy to scale up and down.
 
 
 
@@ -395,12 +388,12 @@ Solr[reference] is an enterprise search server built by Apache allows user to in
 
 \begin{itemize}
 
-\item \textit{Peers}: The system is composed of peers which basically are processes executed by the clients. The clients join the system by bootstrapping themselves with the already present peers in the system. The peers follow the Crash/ Stop process [ref] i.e a peer upon failure crashes and stops all communication with the other nodes. Once the node has failed that node never comes up. 
+\item \textit{Peers}: The system is composed of peers which basically are processes executed by the clients. The clients join the system by bootstrapping themselves with the already present peers in the system. The peers follow the Crash/ Stop process \cite{guerraoui} i.e a peer upon failure crashes and stops all communication with the other nodes. Once the node has failed that node never comes up. 
 
 
-\item \textit{Communication Links}: As part of system design we assume the communication link to be fair-loss links[reference]. Therefore, the network only transfers the messages that are sent from the application and cannot create the messages on its own. In addition to this, we assume the network to be partially synchronous meaning there are times during which the network might being asynchronous and drop messages but eventually the network will become synchronous with upper bounds on the message transmission time.
+\item \textit{Communication Links}: As part of system design we assume the communication link to be fair-loss links \cite{guerraoui}. Therefore, the network only transfers the messages that are sent from the application and cannot create the messages on its own. In addition to this, we assume the network to be partially synchronous meaning there are times during which the network might being asynchronous and drop messages but eventually the network will become synchronous with upper bounds on the message transmission time.
 
-\item \textit{Overlay Network}: The system is built upon Gradient [reference] which constructs an overlay based on the preference function. The preference function used for the application will be explained later in detail but in general it helps to identify the ranking of node as compared to others. The Gradient in turn is built upon a peer sampling service which provides random samples from the application to the Gradient component.
+\item \textit{Overlay Network}: The system is built upon Gradient \cite{sacha2006discovery} which constructs an overlay based on the preference function. The preference function used for the application will be explained later in detail but in general it helps to identify the ranking of node as compared to others. The Gradient in turn is built upon a peer sampling service which provides random samples from the application to the Gradient component.
 
 \end{itemize}
 
@@ -410,12 +403,12 @@ Solr[reference] is an enterprise search server built by Apache allows user to in
 In this section, we will briefly discuss about the overlay network over which the system is built. The two main components used to construct the overlay network are as follows: 
 
 \subsection{Gossiping}
-The system runs over a simple gossiping protocol which forms the basis for the overlay topology management. The gossiping protocol is inspired from the Peer Sampling Service[reference] which provides each peer with a list of other peers in the system which is a uniform random sample of all the peers. The peers then exchange information with other peer selected from the list based on some well defined policies. The gossiping protocol are generally used in information dissemination, scalability, churn management etc.
+The system runs over a simple gossiping protocol which forms the basis for the overlay topology management. The gossiping protocol is inspired from the Peer Sampling Service \cite{samplingService} which provides each peer with a list of other peers in the system which is a uniform random sample of all the peers. The peers then exchange information with other peer selected from the list based on some well defined policies. The gossiping protocol are generally used in information dissemination, scalability, churn management etc.
 
 
 \subsection{Structured Overlay}
 
-Gradient[reference] which is a class of structured P2P overlays forms the basis for the overlay of the system. In this overlay, the nodes select there neighbors based on a well defined preference function. The preference function used in case of the prototype developed as part of thesis is explained in detail in the later sections [Mention Section]. The uniform random sample from the \textit{Peer Sampling Service} is fed into the Gradient. Based on the preference function the node select the best peer to exchange information with. In this way, the structured overlay is constructed and maintained.
+Gradient \cite{sacha2006discovery} which is a class of structured P2P overlays forms the basis for the overlay of the system. In this overlay, the nodes select there neighbors based on a well defined preference function. The preference function used in case of the prototype developed as part of thesis is explained in detail in the later sections [Mention Section]. The uniform random sample from the \textit{Peer Sampling Service} is fed into the Gradient. Based on the preference function the node select the best peer to exchange information with. In this way, the structured overlay is constructed and maintained.
 
 
 \section{Architecture}
@@ -431,7 +424,7 @@ The actual structure of a distributed search engine is usually complex. It invol
 
 \subsection{Leader Election Protocol}
 
-In context of distributed systems various leader election protocols have been discussed {several references}. Election of leader for a group of nodes in the system typically requires all the nodes to agree upon the leader. Once the leader gets elected, it coordinates between the nodes and helps the group to move forward. 
+In context of distributed systems various leader election protocols have been discussed \cite{bully, lamportPaxos}. Election of leader for a group of nodes in the system typically requires all the nodes to agree upon the leader. Once the leader gets elected, it coordinates between the nodes and helps the group to move forward. 
 \par As mentioned above, all the nodes usually need to know about the node that would be elected as leader but in case of large scale system it would usually result in huge traffic in the system. As part of this research, we introduced a weaker form of leader election protocol known as \textit{Leader Selection}. As part of this protocol, we select a group of \textit{top K} nodes in the system. The node which has the highest utility among the K members tries to assert itself as the leader. Figure \ref{fig:p-arrange} provides a general overview of the system in which the top nodes are located at the center and as we go towards the leaf the utility decreases depicted with the color gradient. The node, in order to become the leader asks for promises from the other nodes in the selected group. In case, the nodes see anybody above the node rejects the promise. The requesting only moves to the commit phase after receiving promises from all the nodes in the group. In case any one of them rejects, the node resets the convergence counter and waits for the system to stabilize again. 
 
 \par In order to better understand the mechanism, we need to look at the overlay over which the system is built. We use the Gradient topology, which is a class of P2P topology in which the nodes in the systems organize themselves in the network in such a way that the nodes with the highest utility  are concentrated at the center of the network and the nodes with low utility lies on the outer edges of the network. We use a \textit{preference function}, according to which nodes have a higher preference to form connections with the nodes which have utility higher but closer to itself with higher probability. In this way the nodes arrange themselves in the system. In addition to this, every node runs a convergence function in which it tries to calculate a percentage change in the number of neighbors. In case the change is greater than a predefined threshold \textit{D}, the node resets the convergence counter. On the other hand, if the change is below the threshold the node increments the counter. 
@@ -610,36 +603,37 @@ The general overall functioning of the system involves electing a leader i.e a n
 
 \item First, we cannot guarantee that the entry will be received by every node in the shard as it is based on push protocol and current neighbors. In case a particular peers reference is not in the higher utility nodes, the entry will not be pushed to it.
 
-\item It makes the system vulnerable to Byzantine Nodes [reference] which can easily push junk data.
+\item It makes the system vulnerable to Byzantine Nodes which can easily push junk data.
 
 \item The biggest flaw in this protocol is way in which the preference function is defined. As mentioned earlier a particular node prefers node which higher but closer utility. This means that given enough peers which have higher utility, the peers neighbors will all point to the nodes above in the Gradient, therefore the nodes which are on the edges of a particular shard will never receive the entry.
 
 \end{enumerate} 
 
-As a result, we introduced pull protocol, in which the nodes constantly request the peers higher than self in terms of utility about any latest developments or decisions taken in the shard by the leader. This way there are able to disseminate the information in the system. The dissemination protocol will be explained in greater detail in section [mention section]
+As a result, we introduced pull protocol, in which the nodes constantly request the peers higher than self in terms of utility about any latest developments or decisions taken in the shard by the leader. This way there are able to disseminate the information in the system. The dissemination protocol will be explained in greater detail in section \ref{ssec:gossip}
 
 
 
 \subsection{Gossip Based Data Dissemination}
+\label{ssec:gossip}
 Once a peer becomes a leader, it is implicitly trusted by other members in the shard.
 Initially the information of a node becoming a leader is only published at the leader group chosen by the leader. This information then gets pulled by other peers in the system. In this situation, it might be very much possible that a Byzantine Node might start publishing wrong information to the peers during the pull protocol. In order to avoid such situations, a peer during the pull protocol, requests updates from a predefined configurable peers usually three that are above itself in terms of utility.  The peers respond with the hashes of the information. Only the information for which the hashes match from all the nodes is then pulled from anyone of the responding peers. 
 \par This approach is being used for securely disseminating the leader information in the system. In addition to this, entry dissemination is also based on this protocol. We think that this approach is secure enough in the sense that it is highly unlikely for all the nodes that are requested by peer to provide updates to be faulty.
 
 
-\subsection{Load Balancing}
-
+\subsection{Load Balancing}\
+\label{ssec:loadBalance}
 As the system evolves, the leader receives request for adding new entries in the system. Using basic replication strategies the leader commits the entries to the leader group which then gets replicated to all the nodes in the shard using pull protocol. The system has a predefined \textit{MaxShardSize} parameter. When the entries grow beyond the count, the leader then initiates \textit{ShardSplit} protocol. As part of this protocol, each peer based on its identifier and its depth which is basically number of shard splits seen by the node, decides the next shard id. 
-\par Before initiating the two phase commit of the shard split, the leader stops handling the entry additions. It then looks in its local lucene store and after sorting the entries based on there identifiers, calculates the split point. This meta information is then committed to the leader group nodes along with the shard split update as a part of two phase commit. Once the information is pulled by other peers in the system, based on there new shardId, they decide to remove all the entries either before or after the split point. The process of removing the entries in more detail when we introduce the concept of Leader Units and Timeline in section[reference] and [reference]. The peers then join the other peers in there respective shards. 
+\par Before initiating the two phase commit of the shard split, the leader stops handling the entry additions. It then looks in its local lucene store and after sorting the entries based on there identifiers, calculates the split point. This meta information is then committed to the leader group nodes along with the shard split update as a part of two phase commit. Once the information is pulled by other peers in the system, based on there new shardId, they decide to remove all the entries either before or after the split point. The process of removing the entries in more detail when we introduce the concept of Leader Units and Timeline in section \ref{ssec:leaderUnit} and \ref{ssec:timeline} respectively. The peers then join the other peers in there respective shards. 
 
 \par It might be argued that after the shard split, the entries get divided, so the search results might not be complete. It order to prevent this, each peer has a \textit{routing table} which keeps references to the peers in other shards. The table gets populated and updated by our \textit{Peer Sampling Service} which provides peers with random samples from different shards. Upon receiving shard request, the peer simply forwards the request to the peers in the other shards.
 
 
 \subsection{Large Fanout}
-In this section, we will be discussing the concept of \textit{latency variability} in large scale distributed systems. The term latency variability means the distribution of latency during an operation over the network. The importance of latency variability has increased in recent times due to the requirement for real time responsiveness of applications. Google quickly discovered that simply scaling the system doesn't necessarily means better performance during the response times of search requests[reference taming]. This is due to the presence of a long tail. Normally the requests handled by a particular server are within the limits of respectable response times but once in a while the response time for a request would be much higher. This may be attributed to the network being slow due to choke or system disk from which the data is supposed to be read is acting slow. This phenomenon of long tail has also been observed in trading systems where we might find the latencies of few trades in order of 900ms compared to normal latency of 5ms. 
+In this section, we will be discussing the concept of \textit{latency variability} in large scale distributed systems. The term latency variability means the distribution of latency during an operation over the network. The importance of latency variability has increased in recent times due to the requirement for real time responsiveness of applications. Google quickly discovered that simply scaling the system doesn't necessarily means better performance during the response times of search requests \cite{tamingTail}. This is due to the presence of a long tail. Normally the requests handled by a particular server are within the limits of respectable response times but once in a while the response time for a request would be much higher. This may be attributed to the network being slow due to choke or system disk from which the data is supposed to be read is acting slow. This phenomenon of long tail has also been observed in trading systems where we might find the latencies of few trades in order of 900ms compared to normal latency of 5ms. 
 
 \par We might argue that the occurrence of the phenomenon is not often enough to cause alarm but as the scale of the system keeps on growing as in case of Google where the data is divided into multiple shards. Now the search request needs to be faned out to a larger audience and therefore the probability of occurrence of long tail increases as the requesting node needs to wait for responses from all the shards. This leads to unacceptable response times occurring with higher probability. 
 
-\par Google uses a lot of innovative approaches to solve issue of latency variability as mentioned by Jeffery Dean in this talk[reference jeff dean]. The approach that we are interested and have adapted for our prototype involves instead of sending to a single node in every shard the search request, we send it to a predefined number of nodes in that shard. We simply wait for the first response from that shard and discard the rest. The purpose behind it is to reduce the dependency on the slow performing node by replicating the request to other nodes within the same shard. Once all the shards have responded or search timed out, we collect, filter and augment the results with some metadata. This data is then returned to the requesting node. In this way the system makes significant steps towards preventing long tail in the response times during the search request.
+\par Google uses a lot of innovative approaches to solve issue of latency variability as mentioned by Jeffery Dean in this talk \cite{jeffDean}. The approach that we are interested and have adapted for our prototype involves instead of sending to a single node in every shard the search request, we send it to a predefined number of nodes in that shard. We simply wait for the first response from that shard and discard the rest. The purpose behind it is to reduce the dependency on the slow performing node by replicating the request to other nodes within the same shard. Once all the shards have responded or search timed out, we collect, filter and augment the results with some metadata. This data is then returned to the requesting node. In this way the system makes significant steps towards preventing long tail in the response times during the search request.
 
 
 \chapter{Implementation}
@@ -667,6 +661,7 @@ As part of current implementation, the \textit{Sweep} prototype supports the fol
 \section{Entry Semantics}
 
 \subsection{Entry Identifier Structure}
+\label{ssec:entryIdStructure}
 The structure of the identifier used by the system to handle the entries is mainly composed of three parts. 
 
 \begin{tcolorbox}
@@ -683,13 +678,15 @@ The epoch is simply a counter. A peer when elected as the leader checks the epoc
 
 
 \subsection{Leader Unit}
+\label{ssec:leaderUnit}
+
 A collection of entries added by a leader in a particular epoch is termed as a \textit{leader unit}. Each leader within a particular epoch can add only a predefined amount of entries. As the number of entries reaches the threshold, the leader needs to perform a mandatory epoch switch. 
 
 \begin{tcolorbox}
 \textbf{Leader Unit Structure:} \textless Epoch, LeaderId, NumEntries \textgreater
 \end{tcolorbox}
 
-We limit the entries that a peer which is acting as a leader can add in order to balance the load on the newly created shards after sharding. As already explained in the section[reference], during sharding phase, the leader calculates the split point identifier. It then performs a two phase commit over the leader group which gets pulled by other peers in the system. The split point is just used to identify the leader unit which will actually as a splitting point. We never remove the entries within the leader unit instead we keep or remove whole of the leader units. In order to keep things simple, each node based on predefined bitwise manipulation algorithm identifies whether the leader units less than the split point needs to be removed or split point leader unit and higher needs to be removed. The minimum load on the system before the leader initiates sharding protocol is \textit{ X * Max Leader Unit Entries} i.e multiples of max entries per leader unit. 
+We limit the entries that a peer which is acting as a leader can add in order to balance the load on the newly created shards after sharding. As already explained in the section \ref{ssec:loadBalance}, during sharding phase, the leader calculates the split point identifier. It then performs a two phase commit over the leader group which gets pulled by other peers in the system. The split point is just used to identify the leader unit which will actually as a splitting point. We never remove the entries within the leader unit instead we keep or remove whole of the leader units. In order to keep things simple, each node based on predefined bitwise manipulation algorithm identifies whether the leader units less than the split point needs to be removed or split point leader unit and higher needs to be removed. The minimum load on the system before the leader initiates sharding protocol is \textit{ X * Max Leader Unit Entries} i.e multiples of max entries per leader unit. 
 
 
 
@@ -698,6 +695,7 @@ We limit the entries that a peer which is acting as a leader can add in order to
 Before a leader can start committing entries in a particular epoch, it needs to inform the other nodes in the shard about the epoch switch. The leader needs to make a \textit{marker entry} commit which will indicate the other nodes about the starting of the new epoch. The marker entry commit contains the maximum number of entries added by the previous leader. The current leader analyzes in its data storage module to calculate the entries added in the previous epoch. This information is committed to the leader group nodes which gets propagated to the system through the pull protocol.
 
 \subsection{Timeline}
+\label{ssec:timeline}
 As the system is dynamic any node can join and leave the system. In case the system has evolved enough and a new node joins the system, the new nodes also needs to pull entries from the neighboring nodes and evolve in the same manner to reach the stage at which the other nodes are present. Therefore the nodes in the system needs to keep track of the leader unit history. The timeline is an abstraction which mainly keeps track of the evolution of the system in terms of leader units added.
 
 \par In the system at any moment, the nodes in the leader group see the latest information in terms of entries being added or updated, leader unit switch happening because the previous leader crashed or the max entries that a leader can add in the unit have been added and in order to continue the leader needs to perform a mandatory leader unit switch. All the other nodes needs to pull this information from the nodes higher in utility. In order to become aware of the next leader units each node request the nodes higher with the last largest leader unit that it has seen. This information is stored in the timeline abstraction which is basically an In-Memory List as shown in Figure \ref{fig:timeline}. Each node to which the request is made looks locally in there timeline and returns the next in order leader units. Once the next leader units are verified by the requesting node, the application tries to add the leader units to the timeline. Under normal functioning, if the last leader unit in the timeline has epoch value \textit{X}, the next leader unit that the timeline will allow will be with value \textit{X+1}. The timeline buffers the unit updates which are not in order.
@@ -722,7 +720,7 @@ When a peer receives sharding update, the entry pull abstraction might currently
 \par The application needs to inform the entry pull protocol to skip some of the leader units. Therefore each leader unit is provided with a status field which if set to \textit{SKIP} will be jumped over by the entry pull protocol. The application updates the timeline by updating the leader units that needs to be skipped by setting the status to \textit{SKIP}. Each peer has it's own set of leader units that needs to be skipped depending upon the units already pulled and units remaining between the last pulled and the sharding update. In best case scenario, the node could have pulled till the leader unit that will not be removed and the remaining ones needs to be Skipped. On the other hand, a node could have already pulled all the leader units that would have to removed after sharding.
 
 \subsubsection{Timeline Merge}
-In section[reference] we introduced the concept of the dense identifier space created by the current identifier structure. In this section we will explain the use of these dense spaces in event of network partition merge. 
+In section \ref{ssec:entryIdStructure} we introduced the concept of the dense identifier space created by the current identifier structure. In this section we will explain the use of these dense spaces in event of network partition merge. 
 
 \par In the event of Network Partitioning a group of nodes become unable to discover another group. The group with the original leader before the partitioning keeps on functioning the same way whereas the next best node in the other group starts the voting protocol. Peer if elected as leader, closes the previous leader unit with the number of entries seen by the leader added by the previous leader. In addition to this, it also commits its own leader unit. In this way the two groups evolve on there own accord. 
 In the event of network partition merge, the nodes start discovering nodes from other partition. In order to merge the two partitions effectively the leader units that were added since the partition in both the branches needs to be identified and added to the leader group. which would be pulled by other nodes in the system. The dense spaces created by the entry identifier structure always allows entries added in two different branches to be identified uniquely. For example, assuming the two branches have leader units with epoch \textit{e}, the entry identifier would overlap but the use of node identifier would help to uniquely identify them as a particular node can be leader in a single branch only. 
@@ -877,14 +875,14 @@ At present, the leader generates the splitting point and then each node based on
 
 
 
-%\bibliography{report}
-%%\bibliographystyle{IEEEtran}
+\bibliography{report}
+\bibliographystyle{IEEEtran}
 %%\bibliographystyle{unsrturl}
 %%\bibliographystyle{unsrtnat}
-%\bibliographystyle{•}bibliographystyle{myIEEEtran}
+%%\bibliographystyle{myIEEEtran}
 \appendix
 %\chapter{Insensible Approximation}
 
-\backmatter
+%\backmatter
 
 \end{document}
