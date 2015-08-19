@@ -413,7 +413,7 @@ Gradient \cite{sacha2006discovery} which is a class of structured P2P overlays f
 
 \section{Architecture}
 
-The actual structure of a distributed search engine is usually complex. It involves modules for the request routing, leader election, overlay management, load balancing and searching the data.Figure \ref{fig:architecture} depicts a high level view of the system involving routing requests to specific shards based on the category. In this section we will look at the 
+The actual structure of a distributed search engine is usually complex. It involves modules for the request routing, leader election, overlay management, load balancing and searching the data.Figure \ref{fig:architecture} depicts a high level view of the system involving routing requests to specific shards based on the category.
 
 \begin{figure}[h]
 	\includegraphics[width=10cm, height=12cm]{architecture}
@@ -524,7 +524,7 @@ As part of the leader selection mechanism, we try to elect a leader as soon as p
 
 \begin{algorithm}[h]
 \caption{Eventual Leader Selection - Follower} 
-\label{follower}
+\label{follower}Disadvantages
 \begin{algorithmic}[1]
 
 \UponS[init]{id}
@@ -580,7 +580,7 @@ As part of the leader selection mechanism, we try to elect a leader as soon as p
 
 \subsection{Preference and Utility Function}
 
-Each peer in the system has an associated utility based on the state of the peer at that instant. As the system evolves with time, so does its utility. As already mentioned, in order to build the overlay network, system uses a \textit {Preference Function} based on the utilities of the nodes. A peer uses this preference function mainly during the selection of peer for shuffling and to keep track of preferred neighbors. The preference function in case of  Sweep is selection of the peers which have a higher utility than self but closer to self with higher probability. As seen in the diagram, if we assume utility having an absolute value, as per the preference function, \textit{Peer C} will prefer \textit{Peer A} over \textit{Peer B}, even though both have higher utility than C because A's utility is closer to utility of A.
+Each peer in the system has an associated utility based on the state of the peer at that instant. As the system evolves with time, so does its utility. As already mentioned, in order to build the overlay network, system uses a \textit {Preference Function} based on the utilities of the nodes. A peer uses this preference function mainly during the selection of peer for shuffling and to keep track of preferred neighbors. The preference function in case of  Sweep is selection of the peers which have a higher utility than self but closer to self with higher probability. As seen in the diagram [diagram needed], if we assume utility having an absolute value, as per the preference function, \textit{Peer C} will prefer \textit{Peer A} over \textit{Peer B}, even though both have higher utility than C because A's utility is closer to utility of C.
 
 \par The preference function is based on the utility of a particular peer. It helps a peer to select a preferred peer from a collection of peers. The utility function is generally any metric or set of rules usually depending upon the application requirement which would help to create a total order on the peers in the system. In case of Sweep, the utility function is as follows:
 
