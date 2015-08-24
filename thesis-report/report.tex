@@ -412,21 +412,35 @@ Gradient \cite{sacha2006discovery}, which is a class of structured P2P overlays 
 
 
 \section{Architecture}
+\label{sec:architecture}
 
-The actual structure of a distributed search engine is usually complex. It involves modules for the request routing, leader election, overlay management, load balancing and searching the data. Figure \ref{fig:architecture} depicts a high level view of the system involving routing requests to specific shards based on the category. In this section, we will be discussing its key modules.
+The actual structure of a distributed search engine is usually complex. It involves modules for the request routing, leader election, overlay management, load balancing and searching the data. Figure \ref{fig:architecture} depicts the arrangement of these modules in different layers in the overall application. Application Layer is the main layer that directly interacts with the client. The application module directly interacts with the Routing module and the Data Store layer. The data store module is simply a wrapper over Apache Lucene used to store and index data.
+
+\par The next layer is the Overlay Layer and as the name suggests it is responsible for constructing and maintaining the overlay over which the system is built. In addition to the overlay module, it is also comprised of leader election module, which helps to identify and elect the leader of the system. All the layers in order to function need the help of the Basic Services Layer which include essential modules like Timer and Network for configuring timeouts during asynchronous operations and interacting with other components during different operations. It is not necessary that each module interacts with all the modules in the underlying layers but have an access to the modules in case the need arises. In the below sections, we will be briefly explaining the key modules chosen from the different layers in terms of their responsibility and functionality.
+
+
+
 
 \begin{figure}[h]
-	\includegraphics[width=10cm, height=12cm]{architecture}
+	\includegraphics[width=8cm, height=12cm]{architecture_new}
 	\centering
 	\caption{Architectural Overview}
 	\label{fig:architecture}
 \end{figure}
 
+
+%\begin{figure}[h]
+%	\includegraphics[width=10cm, height=12cm]{architecture}
+%	\centering
+%	\caption{Architectural Overview}
+%	\label{fig:architecture1}
+%\end{figure}
+
 \subsection{Leader Election Protocol}
 \label{ssec:leaderElection}
 
 In context of distributed systems various leader election protocols have been discussed \cite{bully, lamportPaxos}. Election of leader for a group of nodes in the system typically requires all the nodes to agree upon the leader. Once the leader gets elected, it coordinates between the nodes and helps the group to move forward. 
-\par As mentioned above, all the nodes usually need to know about the node that would be elected as leader but in case of large scale system it would usually result in huge traffic in the system. As part of this thesis, we introduced a weaker form of leader election protocol known as \textit{Leader Selection}. As part of this protocol, we select a group of \textit{top K} nodes in the system. The node which has the highest utility among the K members tries to assert itself as the leader. Figure \ref{fig:p-arrange} provides a general overview of the system in which the top nodes are located at the center and as we go towards the edges of the system, the utility decreases as depicted by the color gradient. The node, in order to become the leader asks for promises from the other nodes in the selected group. In case, the nodes from the which the promises are sought, see anybody above the requesting node in terms of utility, rejects the promise. The requesting node which is trying to assert itself as leader, only moves to the commit phase after receiving promises from all the nodes in the group. In case any one of them rejects, the node resets the convergence counter and waits for the system to stabilize again. 
+\par As mentioned above, all the nodes usually need to know about the chapnode that would be elected as leader but in case of large scale system it would usually result in huge traffic in the system. As part of this thesis, we introduced a weaker form of leader election protocol known as \textit{Leader Selection}. As part of this protocol, we select a group of \textit{top K} nodes in the system. The node which has the highest utility among the K members tries to assert itself as the leader. Figure \ref{fig:p-arrange} provides a general overview of the system in which the top nodes are located at the center and as we go towards the edges of the system, the utility decreases as depicted by the color gradient. The node, in order to become the leader asks for promises from the other nodes in the selected group. In case, the nodes from the which the promises are sought, see anybody above the requesting node in terms of utility, rejects the promise. The requesting node which is trying to assert itself as leader, only moves to the commit phase after receiving promises from all the nodes in the group. In case any one of them rejects, the node resets the convergence counter and waits for the system to stabilize again. 
 
 \par In order to better understand the mechanism, we need to look at the overlay over which the system is built. We use the Gradient topology, which is a class of P2P topology in which the nodes in the systems organize themselves in the network in such a way that the nodes with the highest utility  are concentrated at the center of the network and the nodes with low utility lies on the outer edges of the network. We use a \textit{preference function}, according to which nodes have a higher preference to form connections with the nodes which have utility higher but closer to itself. In this way the nodes arrange themselves in the system. The gradient sends sample of the preferred nodes to the application. The application on receiving the sample of preferred nodes, executes a convergence function in which it tries to calculate a percentage change in the number of neighbors. In case the change is greater than a predefined threshold \textit{D}, the node resets the convergence counter. On the other hand, if the change is below the threshold the node increments the counter. The node only tries to assert itself the leader, when the convergence counter has reached a certain value and the node based on its own utility sees no other node above it. It is only then, the node starts the promise round with the other K nodes. 
 
@@ -534,7 +548,7 @@ As part of the leader selection mechanism, we try to elect a leader as soon as p
 \UponS[init]{id}
   \State $isFolower := false;$
   \State $selfId := Id;$ $pendingPromise := Nil;$
-  \State $gradientSample := \emptyset;$
+  \State $gradientSample := \emptyset;$architecture
 \EndUponS
 
 \Upon[gradientSample]{sample}
@@ -612,7 +626,7 @@ While comparing the utility values of two different nodes, we simply compare the
 
 \subsection{Pull Protocol}
 
-The general overall functioning of the system involves electing a leader i.e a node with the highest utility as the leader of shard. The protocol employed for election of leader is \textit{Leader Selection} which is explained in detail in section \ref{ssec:leaderElection}. The leader is responsible for taking decisions regarding addition, searching of entries in the shard. In case of entry addition, in order to make the system highly available and prevent a single point of failure the leader performs a two phase commit to the nodes elected as part of leader group. Once the entry has been replicated to the leader group nodes, the leader returns back a successful response to the client. Now the peers can either push the entries to the neighboring nodes or nodes need to pull the entries added. The push protocol seems lucrative in terms that the peers as soon as they discover about a new entry, push the entry to other nodes. It prevents the other nodes constantly looking for the entries by asking the higher utility nodes. But there are major flaws in this scheme which are mentioned below:
+The general overall functioning of the system involves electing a leader i.e a node with the highest utility as the leader of shard. The protocol employed for election of leader is \textit{Leader Selection} which is explained in detail in section \ref{ssec:leaderElection}. The leader is responsible for taking decisions regarding addition, searching of entries in the shard. In case of entry addition, in order to make the system highly available and prevent a single point of failure the leader performs a two phase commit to the nodes elected as part of leader group. Once the entry has been replicated to the leader group nodes, the leader returns back a successful response to the client. Now the peers can either push the entries to the neighboring nodes or nodes need to pull the entries added. The push protocol seems lucrative in terms that the peers as soon as they discover about a new entry, push the entry to other nodes. It prevents the other nodes constantly looking for the entries by asking the higher utility nodes. But there are major flaws in this scheme which are mentioned below:a high level view of the system involving routing requests to specific shards based on the category. In this section, we will be discussing its key modules.
 
 \begin{enumerate}
 
@@ -632,7 +646,7 @@ As a result, we introduce pull protocol, in which the nodes constantly request t
 \subsection{Gossip Based Data Dissemination}
 \label{ssec:gossip}
 Once a node becomes a leader, it is implicitly trusted by other members in the shard. Initially the information of a node becoming a leader is only published at the leader group chosen by the leader. This information then gets pulled by other peers in the system. In this situation, it might be very much possible that a Byzantine Node might start publishing wrong information to the peers during the pull protocol. In order to avoid such situations, a peer during the pull protocol, requests updates from a predefined configurable peers usually three that are above itself in terms of utility.  The peers respond with the hashes of the information. Only the information for which the hashes match from all the nodes is then pulled from anyone of the responding peers. 
-\par This approach is being used for securely disseminating the leader information in the system. In addition to this, entry dissemination is also based on this protocol. We think that this approach is secure enough in the sense that it is highly unlikely for all the nodes that are requested by peer to provide updates that are faulty.
+\par This approach is being used for securely disseminating the leader information in the system. In addition to this, entry dissemination is also based on this protocol. We think that this approach is secure enough in the sense that it is highly unlikely for all the nodes that are requested by peer to provide updates that are faulty.a high level view of the system involving routing requests to specific shards based on the category. In this section, we will be discussing its key modules.
 
 
 \subsection{Load Balancing}
@@ -662,22 +676,32 @@ In this section, we will be discussing the concept of \textit{latency variabilit
 \chapter{Implementation}
 \label{chap:impl}
 
-In order to check for the viability of the theoretical approach we worked on developing a prototype on the principles stated in the design section. The prototype used Apache Lucene for storing and indexing data. In addition to this, the prototype was developed using the Kompics framework which is an asynchronous message passing system. The main application process on each node in the system is composed of following abstractions: \textit {group membership, routing, leader election} and \textit{data storage} abstraction . All the modules interact with the \textit{network} and \textit{timer} abstraction which are used to send messages over UDP and configure local timeouts respectively. In addition to this, we have a \textit{message chunking} abstraction which as name suggests check the messages going over the network and in case the message exceeds the maximum transmission limit, fragments the packet and at the receiving end joins the fragments to construct the final message. All of the abstractions are built from scratch in Java.
+In order to check for the viability of the theoretical approach we worked on developing a prototype on the principles stated in the design section. The prototype used Apache Lucene for storing and indexing data. In addition to this, the prototype was developed using the Kompics framework which is an asynchronous message passing system. The main application process on each node in the system is composed of following abstractions: \textit {group membership, routing, leader election} and \textit{data storage} abstraction. All the modules interact with the \textit{network} and \textit{timer} abstraction which are used to send messages over UDP and configure local timeouts respectively. In addition to this, we have a \textit{message chunking} abstraction which as name suggests check the messages going over the network and in case the message exceeds the maximum transmission limit, fragments the packet and at the receiving end joins the fragments to construct the final message. All of the abstractions are built from scratch in Java and have been previously explained in greater detail in Section \ref{sec:architecture}.
 
-\par The main application module interacts with the above mentioned abstractions. It is responsible for \textit{Indexing} and \textit{Searching} of the documents in the system. In case a node receives a request for adding an entry in the system, it forwards the request to the application module. The module firstly checks whether the node is the leader for the current shard. In case it is the leader, it invokes the entry addition routine on self. Otherwise, it sends the request to the routing module to route the request to the leader. As part of current implementation, the entry addition routine is a synchronous operation which involves performing a two phase commit by the leader over the leader group nodes. Only when the leader receives responses from the majority of leader group nodes, it commits the entry locally. In order to commit the entry the application module interacts with the data module to add the entry in the lucene. Once the entry gets replicated, the leader responds back to the node from which the request originated. 
+\par The application module as shown in Figure \ref{fig:architecture} is responsible for \textit{Indexing} and \textit{Searching} of the documents in the system. A high level view of the interaction of a single user layer with the system layer is shown in Figure \ref{fig:overall_function}. In case a node receives a request for adding an entry in the system, it forwards the request to the application module. The module firstly checks whether the node is the leader for the current shard. In case it is the leader, it invokes the entry addition routine on self. Otherwise, it sends the request to the routing module to route the request to the leader. As part of current implementation, the entry addition routine is a synchronous operation which involves performing a two phase commit by the leader over the leader group nodes. Only when the leader receives responses from the majority of leader group nodes, it commits the entry locally. In order to commit the entry the application module interacts with the data module to add the entry in the lucene. Once the entry gets replicated, the leader responds back to the node from which the request originated. 
 
 \par The \textit{Search Entry Operation} involves user entering the name of the document to be located. The middle ware constructs a well defined search pattern which is understood by the lucene in the data storage abstraction. The search request is initially handled by the application module of the client. The application module sends this request to the routing module to check for the references of the nodes located in different shards in the system which are populated by the gossiping protocol constantly supplying random subset of the global samples to the routing module. The module then routes the request to multiple nodes in each shard. As the number of shards can grow therefore, it can easily result in large fanout search causing a long tail. To prevent this, we route request to more than one node in each shard and only handle the response from the fastest node and reject the other responses. The search responses are added in a separate lucene instance. In case all the shards responded or the timeout for search operation, whichever gets triggered first, the responses are then sorted and returned back to the client. 
 
+
+\begin{figure}[h]
+	\includegraphics[scale=0.35]{OverallFunctioning}
+	\centering
+	\caption{Architectural Overview}
+	\label{fig:overall_function}
+\end{figure}
+
+
+
 \subsection{Overlay Network}
 
-The system strives to be a dynamic system in which the nodes can join and leave depending upon their requirement. Gradient topology built over peer sampling service is being used to construct the overlay of the system. The nodes perform shuffling as part of construction of a random graph and gradient topology over the random graph using preference function. Each node holds only a subset of total nodes which are known as preferred nodes. The mechanism to identify the preferred nodes depends upon the topology. The application holds two different set of preferred nodes, identified under the gradient and the peer sampling service. Each service keeps on updating the set by periodically identifying a node based on different policies and initiate a shuffle with that node. In this way, each peer is able to discover new peers joining the system.
+The system strives to be a dynamic system in which the nodes can join and leave depending upon their requirement. Gradient topology built over peer sampling service is being used to construct the overlay of the system. The nodes perform shuffling as part of construction of a random graph and gradient topology over the random graph using preference function. Each node holds only a subset of total nodes which are known as preferred nodes. The mechanism to identify the preferred nodes depends upon the topology. The application holds two different set of preferred nodes, identified under the gradient and the peer sampling service. Each service keeps on updating the set by periodically identifying a node based on different policies and initiate a shuffle with that node. As part of shuffle nodes exchange a subset of the view held by them and merge in their local view the sample received from the other nodes. In this way, each peer is able to discover new peers joining the system. In addition to it, each sample also has an age attribute which gets incremented on every shuffle and helps to identify how long that particular sample has been in the system.
 
-\par  On the other hand,  as a node leaves the system voluntarily or by crashing, the sample of node in the system becomes stale. As an effort to keep neighborhood samples fresh, in case the size of the sample list grows beyond a predefined threshold, we removed the oldest sample i.e peer reference with the highest age. We quickly realized that if this approach needs to be successful, we would need to synchronize the rate at which the gradient and the peer sampling service performs shuffling with the neighborhood nodes.
+\par  As a node leaves the system voluntarily or by crashing, the sample of node in the system becomes stale. As an effort to keep neighborhood samples fresh, in case the size of the sample list grows beyond a predefined threshold, we removed the oldest sample i.e peer reference with the highest age. We quickly realized that if this approach needs to be successful, we would need to synchronize the rate at which the gradient and the peer sampling service performs shuffling with the neighborhood nodes.
 
-\par In case the difference between the shuffling rates of both the services is large, the outcomes of the stabilization of the gradient were unexpected. The main reason behind it is that the peer sampling service feeds the sample to the gradient service. So in case the rate of shuffling in the croupier is fast, the increment in the ages would be frequent because as part of shuffling the peers increment the age of the references and then exchange sample. Therefore the croupier will feed the samples with high ages and the gradient shuffling is at a lower rate resulting in the slow rate of increase in ages. The nodes disseminate there updated utility in the system through the shuffles. Therefore, the probability of peer reference samples having ages higher than the corresponding samples present in the gradient sample is higher even though the reference from the sampling service has updated utility. It is because of the large gap in the shuffling rates of the both the services. Thus, the updated peer reference sample gets disseminated in the system slowly.
+\par In case the difference between the shuffling rates of both the services is large, the outcomes of the stabilization of the gradient were unexpected. The main reason behind it is that the peer sampling service feeds the sample to the gradient service. So in case the rate of shuffling in the sampling service is fast, the increment in the ages would be frequent because as part of shuffling the peers increment the age of the references and then exchange sample. Therefore the sampling service will feed the samples with high ages and the gradient shuffling is at a lower rate resulting in the slow rate of increase in ages. The nodes disseminate their updated utility in the system through the shuffles with age zero. Therefore, the node sample with a lower age would mean that it recently has been shuffled by the host node in the system and therefore indicates recent utility of the node. In case of difference in shuffling rates of the services with the sampling service shuffling faster than the gradient service, the probability of peer reference samples having ages higher than the corresponding samples present in the gradient sample is higher even though the peer reference from the sampling service has updated utility. Thus, the updated peer reference sample gets disseminated in the system slowly as the sample recent utility has a higher age than the same sample with old utility.
 
 \subsection{Operations}
-As part of current implementation, the \textit{Sweep} prototype supports the following operations:
+As part of current implementation, the prototype supports the following operations:
 
 \begin{itemize}
 
@@ -735,8 +759,9 @@ The information about the new leader units that are incorporated in the timeline
 
 
 
-\begin{figure}[h]
-	\includegraphics[scale=0.5]{timeline}
+\begin{figure}[H]
+	\includegraphics[scale=0.5]{timeline_new}
+	\centering
 	\caption{Timeline Evolution}
 	\label{fig:timeline}
 \end{figure}
@@ -751,19 +776,21 @@ When a peer receives sharding update, the entry pull abstraction might currently
 \subsubsection{Timeline Merge}
 In section \ref{ssec:entryIdStructure} we introduced the concept of the dense identifier space created by the current identifier structure. In this section we will explain the use of these dense spaces in event of network partition merge. 
 
-\par In the event of Network Partitioning a group of nodes become unable to discover another group. The group with the original leader before the partitioning keeps on functioning the same way whereas the next best node in the other group starts the voting protocol. Peer if elected as leader, closes the previous leader unit with the number of entries seen by the leader added by the previous leader. In addition to this, it also commits its own leader unit. In this way the two groups evolve on there own accord. 
-In the event of network partition merge, the nodes start discovering nodes from other partition. In order to merge the two partitions effectively the leader units that were added since the partition in both the branches needs to be identified and added to the leader group. which would be pulled by other nodes in the system. The dense spaces created by the entry identifier structure always allows entries added in two different branches to be identified uniquely. For example, assuming the two branches have leader units with epoch \textit{e}, the entry identifier would overlap but the use of node identifier would help to uniquely identify them as a particular node can be leader in a single branch only. 
+\par In the event of Network Partitioning a group of nodes become unable to discover another group. The group with the original leader before the partitioning keeps on functioning the same way whereas the next best node in the other group starts the voting protocol. Peer starting the voting protocol, if elected as leader, closes the previous leader unit with the number of entries seen by the leader added by the previous leader. In addition to this, it also commits its own leader unit. In this way the two groups evolve on there own accord.  In the event of network partition merge, the nodes start discovering nodes from other partition. In order to merge the two partitions effectively the leader units that were added since the partition in both the branches needs to be identified and added to the leader group. which would be pulled by other nodes in the system. The dense spaces created by the entry identifier structure always allows entries added in two different branches to be identified uniquely. For example, assuming the two branches have leader units with epoch \textit{e}, the entry identifier would overlap but the use of node identifier would help to uniquely identify them as a particular node can be leader in a single branch only. 
 
 \par Once we identify the leader units that were added after the partition, they could easily be merged back in the timeline because of these dense spaces. Figure \ref{fig:timelineMerge} depicts the above scenario of partition merge.
 
 
 
-\begin{figure}[h]
-	\includegraphics[scale=0.25]{npMerge}
+\begin{figure}[H]
+	\includegraphics[width=16cm, height= 13cm]{timeline-merge}
+	
 	\caption{Timeline merge}
 	\label{fig:timelineMerge}
 \end{figure}
 
+
+As we can clearly see from the Figure \ref{fig:timelineMerge}, a simple merge creates an issue of the split point leader unit. When the networks split, the nodes in one of the partitions assumed the current leader to be dead and started their own election protocols while the leader being alive in other partition continued with its operation. This can be seen from the differences in the leader units having the \textit{same epoch} and the \textit{leader identifier}  but different entries added in the system by the leader. When the partitions merge then the leader of the merged partitions need to identify the presence of this case and need to indicate the other nodes in the system to reopen the leader unit and fetch the remaining entries. The nodes which went into other partition than the leader at that time will recognize the difference in the entries and start pulling the remaining entries to become up to date.
 
 
 \chapter{Evaluations}
