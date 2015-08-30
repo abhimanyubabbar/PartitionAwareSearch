@@ -916,11 +916,11 @@ As part of this experiment we started with 200 nodes in the system and loaded th
 
 
 
-\chapter{Conclusions}
+\chapter{Conclusion}
 \label{chap:conclusion}
 
-As part of this thesis, we introduced Sweep, a full text decentralized peer to peer search system. The overlay over which the system is built is based on gradient topology. The topology is based on a preference function to provide total order on the peers. This overlay network is turn used by peers to elect leader for each shard. In addition to this, each peer uses pull protocols to fetch the information being added in the system. 
-\par The system is maintained and controlled by a small and fixed number of peers in each shard. Latency variability over the large fanout during the search is resolved by sending the request to more than one node in each shard.
+As part of thesis, we introduced the architecture and design behind a Full Text Decentralized Peer to Peer Search System. In addition to this, we also developed a prototype based on the mentioned principles. The prototype is built over the overlay which in turn is constructed using gradient topology. The topology uses a preference function to form links with the preferred nodes in the system. As part of prototype, each node prefers nodes with higher utility but closer to them. In addition to this, in order to help with the coordination among the nodes, we introduced a weaker form of leader election protocol known as Leader Selection. Each node base on its local utility and neighbors determines its claim to become a leader for a particular shard and if the criteria is fulfilled initiates voting protocol. A peer once chosen leader for shard identifies the followers which are group of nodes over which the operations carries out by leader will be replicated. Leader also initiates a lease, after which it has to re-ascertain itself as a leader, failing which the follower group will remove it from the leader position and wait for another leader to emerge.
+\par The whole system which is composed of a number of shards, is controlled by a small and fixed number of peers which are the leaders and its follower group for every shard. The prototype at present, exposes \textit{ADD} and \textit{SEARCH} entry operations. For adding a new entry, the request is redirected to the leader of shard which then replicates it over the follower group. Each node then pulls the information from the nodes above in the utility resulting in dissemination of the information in the system. In order to search, the request is sent to a random node in all the shards. The requesting node then wait for the responses from each shard after which it replies back to the client with relevant information. This fanout of search request to multiple shards is affected by latency variability wherein a single slow running node in one of the shards will affect the total response time of the shard request. To prevent this, the request is sent to multiple nodes in each shard and only response from the fastest node from each shard is considered.
 
 \section{Future work}
 \label{sec:future-work}
@@ -928,23 +928,26 @@ As part of this thesis, we introduced Sweep, a full text decentralized peer to p
 %% What are the next obvious things to be done?
 %% What hints can you give to the next person who is going to followup upon your work?
 
-The thesis presents a prototype implementation for the full text decentralized search based on Apache Lucene. As the system is composed of many independent components, there exists edge cases which are not yet handled.
-
-\subsection{Edge Case Identification}
-As the system is asynchronous and composed of various components, each working independently of the other, certain edge cases exists for which the handling has not been defined. The priority will be to identify these cases and then handle them correctly. In addition to this, semantics of the fault handling and resolution is not defined. For now, in case of a fault like unable to write to data storage or individual components crashing, we simply throw an exception and crash the peer. This results in a poor user experience and therefore better fault handling and resolution needs to be carried out.
-
-\subsection{Pagination}
-The search request initiated by the client is sent out by the application to the peers in other shards. Only a subset of the responses that are received back from the peers in different shards are sent to the client. This is done to prevent overloading the network. In future, we would like to implement pagination in which responses regarding the initial pages will be sent to the client. If the clients want to see more responses by clicking on next page, it would fire another query with the same search pattern but a different page number which would indicate the application to skip the initial responses and sent back the next batch of matching responses.
-
-\subsection{Robust Sharding Protocol}
-At present, the leader generates the splitting point and then each node based on the bitwise manipulation algorithm decides to remove either the leader units above the splitting point or below it. This is a very basic approach. In future we would like to implement another bitwise manipulation algorithm which based on the metadata for each leader unit would identify the location of each leader unit after sharding.
+The thesis presents a prototype implementation for the full text decentralized search based on Apache Lucene. The future work for the prototype built is briefly explained in below section:
 
 
 \subsection{Delete and Update Operations}
-At present, the system only supports adding of entries and searching of entries. In addition to this, we assume that the entry that has been added is immutable and therefore cannot be updated. The next step would to provide support for update and delete operation. 
 
-\subsection{Failure Detection}
-In a distributed system it is really hard to detect whether a node has crashed with certainty. This is due to the fact that the system is asynchronous and detection works on heartbeat being received in a bounded time. 
+As part of the implementation, the system only deals with the Add and Search entry operations. This greatly simplifies the execution as the entries are not modifiable and therefore the client needs to add a new entry with the updated values. In future, we would like to provide the user with update operation in which the application will still create a new entry to be added in the system but will delete the previous entry. The delete entry operation is difficult to implement because of the fact that the entry gets replicated to all the nodes in the system through the pull protocol. In order to implement a delete operation a special entry needs to be committed by the leader which would need to be pulled by the nodes in the shard and which will indicate delete operation for a particular entry from the datastore.
+
+\subsection{Server Side Pagination}
+
+Whenever a client initiates a search request, the number of matches for a particular search query could be very large. Sending all the data every time a search query is initiated can overwhelm the network. As part of current prototype implementation, to keep things simple we reply back with all the data matching the search query. In future as the amount of data in system will grow, this approach will become unfeasible. Therefore we would need to implement server side pagination, where in the client will generate the search request and send it to the server. The search request will also contain the page number and number of results which will enable the server to execute the query and sort the results and only return the results that would lie in that particular page number. If clients wont to see more responses, they will again initiate the same query but with a different page number to the server.
+
+
+\subsection{Edge Case Identification}
+
+As the system is asynchronous and composed of various components, each working independently of the other, certain edge cases exists for which the handling has not been defined. The priority will be to identify these cases and then handle them correctly. In addition to this, semantics of the fault handling and resolution is not defined yet. For now, in case of a fault like unable to write to data storage or individual components crashing, we simply throw an exception and crash the peer. This results in a poor user experience and therefore better fault handling and resolution needs to be carried out.
+
+
+\subsection{Robust Sharding Protocol}
+At present, the leader generates the splitting point and then each node based on the bitwise manipulation algorithm applied on its self identifier, decides to either remove the leader units above the splitting point or below it. This is a very basic approach. In future we would like to implement another bitwise manipulation algorithm which based on the metadata for each leader unit would identify the location of each leader unit after sharding. In this way the units could be transferred in different shards. The only drawback is that it would result in imbalance in load as it might be possible that the units identified to be sent to a particular shard have very less entries that the other ones meaning all the low capacity leader units might go in one shard and high capacity units in another shard. This problem needs to be solved before switching to the approach mentioned in this section.
+
 
 
 
