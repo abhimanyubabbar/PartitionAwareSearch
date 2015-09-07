@@ -440,30 +440,98 @@ The actual structure of a distributed search engine is usually complex. It invol
 \subsection{Leader Election Protocol}
 \label{ssec:leaderElection}
 
-In context of distributed systems various leader election protocols have been discussed \cite{bully, lamportPaxos}. Election of leader for a group of nodes in the system typically requires all the nodes to agree upon the leader. Once the leader gets elected, it coordinates between the nodes and helps the group to move forward. 
-\par As mentioned above, all the nodes usually need to know and agree about the node that would be elected as leader but in case of large scale systems, this approach would not only lead to increased traffic but also the time required for leader election, making the existing leader election protocols unfeasible. Therefore, we introduce a weaker form of leader election protocol known as \textit{Leader Selection} which helps us to identify a group of \textit{top K} nodes in the system over which the leader election protocol will be executed. The node which has the highest utility among the K members tries to assert itself as the leader. Figure \ref{fig:p-arrange} provides a general overview of the system in which the top nodes are located at the center and as we go towards the edges of the system, the utility decreases as depicted by the color gradient. The node, in order to become the leader asks for promises from the other nodes in the selected group. In case, the nodes from the which the promises are sought, see anybody above the requesting node in terms of utility, rejects the promise. The requesting node which is trying to assert itself as leader, only moves to the commit phase after receiving promises from all the nodes in the group. In case any one of them rejects, the node resets the convergence counter and waits for the system to stabilize again. 
 
-\par In order to better understand the mechanism, we need to look at the overlay over which the system is built. We use the Gradient topology, which is a class of P2P topology in which the nodes in the systems organize themselves in the network in such a way that the nodes with the highest utility  are concentrated at the center of the network and the nodes with low utility lies on the outer edges of the network. We use a \textit{preference function}, according to which nodes have a higher preference to form connections with the nodes which have utility higher but closer to itself. In this way the nodes arrange themselves in the system. Each node has a local convergence counter which indicates the stabilization of the local vie. The gradient sends sample of the preferred nodes to the application. The application on receiving the sample of preferred nodes, executes a convergence function in which it tries to calculate a percentage change in the number of neighbors. In case the change is greater than a predefined threshold \textit{D}, the node resets the convergence counter. On the other hand, if the change is below the threshold the node increments the counter. The node only tries to assert itself the leader, when the convergence counter has reached a certain value and the node based on its own utility sees no other node above it. It is only then, the node starts the promise round with the other K nodes. 
-
-\par The main reason behind the use of convergence counter is due to the change in position of a node in the overlay. In case a node's utility decreases, its neighbors start forming connections with other nodes having higher utility and the node starts moving towards the edge of the system. Similarly, in case a node's utility increases, it starts moving up in the gradient during which it might be possible that during this rise, it doesn't locate any node above itself in terms of utility and wrongly thinks himself as leader. It could be avoided if the node looks at the change in the sample of neighbors provided by gradient on successive iterations and deduce that it is still rising in the gradient. Therefore, the main purpose behind convergence counter is to ensure that the position of the node has stabilized when it starts asserting itself as leader. 
-
-\par This process of determining if self node is a leader is carried out by every node in every shard in the system. Eventually the leader gets elected for every shard. In addition to leader, every shard also has a follower group selected by the leader itself. The purpose of the follower group is to help the leader with the replication of the commands and the steps taken by the leader. In case the leader dies, the next higher node usually from the follower group takes over the leadership for that shard. The main functionality of the members of the followers group is as follows:
+In context of distributed systems, a lot of approaches regarding the leader election have been discussed. Most of the approaches involve all the nodes in the system to know and agree about a node being elected as a leader. This process of agreement between all the nodes works fine in case the nodes in the system are limited are known to each other but as the scale of the system increases, the approach of having agreement between all the nodes becomes unfeasible mainly in regards to the bandwidth utilization in terms of messages exchanged and also the time required to elect a new leader which increases dramatically. In addition to this, as the system needs to be deployed over open networks where nodes can come and go as they want, it further exacerbates the issue as the time to reach an agreement may increase further because nodes taking part in election might suddenly leave which will result in election round being discarded.
+\par In order to make the leader election protocol suitable for our requirements of it being used to elect nodes as leader over open internet, we modified the protocol to be a weaker variant of the existing algorithms and is known as Leader Selection algorithm. The responsibility of the leader election is now handled by a small group of nodes in the system. The group is decided by the node asserting itself to be leader and is known as follower group. The decision taken by this group is then communicated to rest of the peers in reasonable time. This process helps in reducing the message and time complexity for electing a new leader. 
 
 
-\begin{enumerate}
 
-\item Reject all promises in case the node has already promised or is a part of follower group.
+\subsubsection{Eventual Leader Election:}
 
-\item Accept a promise in case the node doesn't see anybody above the requesting node in terms of utility.
+The leader election protocol developed as part of the thesis is a combination of the Paxos\cite{lamportPaxos}, Bully\cite{bully} and the Monarchial leader election algorithms. It resembles bully in terms of the node with the highest utility will try to enforce itself as the leader. In addition to this, in case the existing leader dies, the next best node in terms of utility will take its place which resembles Monarchial leader election. Finally, similar to Paxos, the leader selection algorithm also has :
 
-\item Expire a promise in case the commit message is not received before the timeout for a specific promise.
+\begin{itemize}
 
-\end{enumerate}
+\item \textbf{proposers}: nodes which will take over leadership in case current leader dies.
+\item \textbf{acceptors}: followers
+\item \textbf{learners}: all peers.
+
+\end{itemize}
+
+The selection of the leader is performed by the leader candidate with the follower group. The information gets disseminated to rest of the nodes through the pull mechanism.
+
+\subsubsection{Gradient Overlay}
+
+As mentioned earlier, each node asserting itself to be the leader, selects its group of nodes with which it will initiate the selection protocol. The immediate problem that arises is the identification of this group. The gradient topology helps the node asserting itself as a leader to identify this group. The gradient topology is based on a preference function which helps each peer to choose neighbors over the others based on the utility. The preference function used in the system helps the gradient topology to arrange the nodes with the higher utility towards the center of the system whereas the nodes with low utility are present towards the edges of the system. The nodes with the utility lying in between the two are present in the internal structure between the center and the edges. The gradient topology helps to provide a total order on the nodes. Ideally the node at the center of the gradient initiates the leader election protocol and it chooses the follower group to be \textit{topK} nodes. 
 
 
-As part of the leader selection mechanism, we try to elect a leader as soon as possible. In a very dynamic system where nodes can join and leave the system, it is very much possible that a better node comes along and try to assert itself as a leader even though a leader is already present thus violating the safety condition of having only a single leader per shard in the system. In order to prevent this, when a node gets elected as the leader, it along with the chosen follower group, artificially augments the utility by switching on the leader membership check. This check places the group at the center of the shard. In this way when a better node comes along, it cannot instantaneously start the election protocol because it's self membership check is switched off and it sees the current group as better than himself. 
+\subsubsection{Overlay Stability}
 
-\par It might be argued that the feature of artificially increasing the utility could lead to violation of fairness protocol, meaning that a node which became a leader initially, can become the leader for eternity in case the group membership check is not switched off. Therefore, it is the responsibility of the leader to locally switch off the leader group membership check and then look at the neighboring samples. In case the leader finds a better node, the leader simply backs of by terminating its membership. The follower group detects it and removes themselves from the group membership. The better node then starts the promise round itself and takes over the leadership for the current shard.
+The nodes in the system can join and leave the system whenever they want resulting in churn. In addition this, the utility of nodes can change therefore they can move in the gradient. Therefore, it might result in the non convergence of the overall gradient topology. In this situation, each node locally determines the stability of its neighbors by starting a convergence counter. On every shuffle round where each node updates its neighbors, the counter gets incremented in case the change in the view as compared to the previous view is below a predefined threshold. In case the change is more than the threshold it forces the node to reset the counter. The convergence counter enables each node to determine the local stability of the gradient as each node has only a subset view of the whole system. Nodes initiate the leader election protocol when the counter reaches a defined value.
+
+\subsubsection{Protocol Overview}
+
+Each node in the system periodically executes the leader code shown in Algorithm 1 and also the follower code as depicted in Algorithm 2. As part of the leader code, the node checks if the conditions for being the leader holds. In case the conditions are satisfied, the node initiates a voting protocol to the \textit{topK} nodes in the system known as the follower group. On receiving the voting request, the follower code gets executed. It checks that whether node deserves to be the leader and in case all the conditions are fulfilled, it sends back as acknowledgement. Only on receiving the acknowledgments from all the nodes in the follower group will the node finally assert itself as the leader and initiates a lease at its own end and informs the follower group about the lease and the new leader round. 
+\par The leader uses its followers to replicate the decisions taken in order to ensure data redundancy. The leader after expiry of every lease will again check that whether conditions for it to be the leader holds. In case the conditions are not met, the leader stops with the lease extension. The lease eventually expires at the followers group and they again wait for a new leader to emerge. 
+
+
+\subsubsection{Utility Values}
+
+
+In this section we will be giving a brief introduction concerning the parameters used by the different nodes to calculate their utility. It is explained in greater depth in the Section {ref:utility}. The nodes based on the utility arrange themselves in the overlay with the higher utility ones getting concentrated at the center of the system. The utility is decided based on following parts:
+
+\begin{itemize}
+
+\item \textbf{leaderGroupMembership}: boolean value indicating that the node is part of either a leader or part of follower group.
+\item \textbf{replicationScore}: The decisions that are taken by the leader which have been replicated by a particular node.
+\item \textbf{peerScore}: Score of a peer based on its internal properties like bandwidth and processing speed.
+\item \textbf{identifier}: identifier of the peer.
+
+\end{itemize}
+
+The \textit{leaderGroupMembership} checks gets enabled when the node either gets elected as a leader or becomes a part of the follower group. This ensures that the follower group remains as the \textit{topK} nodes during the lease round as the nodes joining the system or already present will have the check being disabled. This check if enabled provides a boost to the utility of the node making it migrate towards the center of the gradient. The \textit{replicationScore} is the number of decisions taken by the leader which have been replicated by a particular node. The \textit{peerScore} is decided based on the internal characteristics of the node like bandwidth, processing speed available to the node. The last is the \textit{identifier} of the node which is used as a tie breaker and provide total order on nodes. 
+
+
+\subsubsection{Leader Behavior}
+
+The behavior of the leader is depicted in Algorithm 1. The leader module in each peer checks the below conditions periodically to determine if the node needs to initiate the leader election protocol :
+
+\begin{itemize}
+\item determine locally that the gradient is stable and converged.
+\item check that based on its utility it doesn't have any neighbors with higher utility.
+\item check that the leader group membership check is switched off meaning node is not part of any follower group.
+\end{itemize}
+
+Once the conditions are met, the node initiates the voting process as part of leader election protocol. It selects topK nodes which will be part of  its follower group and sends them a promise request meaning that they accept the node as their leader. It then waits for their responses. Rejection from any node means that their might be a node which is better than the leader which has not yet been discovered by the leader itself. The leader then cancels the current election round and wait for the conditions to be met again before initiating the protocol.
+On the other hand, if the leader receives promises from all the nodes in its follower group, it informs the follower group about it being elected as leader which results in nodes starting a lease for the current leader.  Before the expiry of the lease, the leader again checks that the conditions for itself to become a leader are met and in case the conditions hold, it informs its follower group about extension of the lease. The follower group at this point might not be the same as in previous round. The node recalculates the topK nodes before extending the lease and send them the extension request. In case the lease is not extended it expires and the node resets the leader group membership check.
+
+It might also be possible that at the time of extension, the leader might discover a node which is better than the leader itself and in order to promote fairness in the system, the leader will not extend its lease anymore and allow the new node with better utility to impose itself as the new leader.
+
+
+\subsubsection{Follower Behavior}
+
+The behavior of the nodes in the follower group is depicted in Algorithm 2. Each node in follower group accepts the promise request from the 
+node in case it satisfies the below conditions:
+
+\begin{itemize}
+\item the node has not already promised to another node.
+\item the utility of the node requesting the promise is better than anybody that the node has seen.
+\item the node itself is not a part of follower group.
+\end{itemize}
+
+In case the above conditions hold, the node sends an acknowledgement in regard to the promise request. The above condition also prevents the emergence of two leaders simultaneously in case the follower group of the two nodes trying to elect themselves as leader overlap with atleast one node. Once the node becomes part of the follower group it will switch on the leader group membership check and boosting its utility. It will also reject the promise request from any other node in this state.
+
+
+
+
+\subsubsection{Multiple Leaders}
+
+The leader module on each node, checks whether the conditions for becoming a leader are met and in case the conditions hold initiate the leader election protocol. Ideally, based on converged system only a single node with the highest utility should initiate the leader election protocol and be chosen as the leader but under certain special circumstances multiple nodes can initiate leader election protocol and get elected as leaders. The links with which the nodes communicate with each are fair loss links and therefore can drop messages. It might be possible that a large number of messages are being dropped by the links and therefore two different nodes are unable to detect each other and start election protocol. As part of topK nodes that are chosen by the two nodes, event if a single node overlaps it would prevent the election of two nodes as leaders simultaneously but in case the topK group of nodes has no common member which can happen in event of network partitioning, the two nodes will be elected as two leaders. Once the network heals, they will detect the presence of the other and one of the elected nodes will give up leadership. 
+
+
+\subsubsection{Information Dissemination}
+
+Once the leader gets elected the information about the new leader is initially present with the follower group. This information needs to be disseminated in the system to other peers. As each node in the overlay can reach the topK nodes in O(logN) time, the information gets pulled by the nodes near the center from the center and nodes lying away from the center pull the information from their parent provided to them by the gradient in reasonable time.
 
 \begin{figure}[h]
 	\includegraphics[scale=0.5]{p2p}
