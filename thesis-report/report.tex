@@ -276,18 +276,18 @@ Acronyms and Abbreviations.
 \label{chap:introduction}
 %% Longer problem statement
 %% General introduction to the area
-Full-text search is the de-facto standard for information discovery on the Internet. From google to piratebay, Internet users have learnt how to query in natural language to find information of interest to them. Currently, there is no decentralized, full-text search service available for the open Internet. Some of the main research challenges in building such a system include how to make a reliable search service using unreliable peers and an unreliable network, how to ensure predictable low-latency responses on a network with varying, unpredictable network bandwidth and latencies, how to ensure both the completeness and integrity of the search index at each peer, and how to ensure the search index can grow in size without degrading search performance. Sweep is a decentralized full-text search system that addresses these challenges. It is designed to be a peer-to-peer search engine that can be managed by a small number of trusted peers. The trusted peers, or leaders, are responsible for shards (partitions of the search index) and accept additions, deletions, and updates to the search index. We do not mandate a trust model, but anything from from a static pre-defined set of peers to a dynamically changing set of leaders backed by a computational trust model is possible. Compared to allowing index entries to be inserted at any node, our model simplifies the problems of access control and search index pollution. All peers respond to search queries by maintaining a replica of a subset of the whole search index. The index automatically shards whenever the size of a shard exceeds a system- defined threshold. That is, we bound the size of the search index at each peer to help bound the storage and bandwidth costs at individual peers. A search query is sent to all shards, and the client merges the results before presenting them to the user. In fact, redundant queries are sent to all shards, with the first responders from each shard returning with high probability in sub second time. Such latency variance reduction techniques that trade off higher bandwidth for reduced search latency are becoming increasigly viable due to ever improving consumer network bandwidth.
+Full-Text Search is the de-facto standard for information discovery on the Internet. From Google to Piratebay, Internet users have learned how to query in natural language to find information of interest to them. Currently, there is no decentralized, full-text search service available for the open Internet. Some of the main research challenges in building such a system include how to make a reliable search service using unreliable peers and an unreliable network, how to ensure predictable low-latency responses on a network with varying, unpredictable network bandwidth and latency, how to ensure both the completeness and integrity of the search index at each peer, and how to ensure the search index can grow in size without degrading search performance. The prototype built as part of this thesis, is a decentralized full-text search system that addresses these challenges. It is designed to be a peer-to-peer search engine that can be managed by a small number of trusted peers. The trusted peers, or leaders, are responsible for shards which are the partitions of the search index and accept additions, deletions, and updates to the search index. We do not mandate a trust model, but anything from from a static pre-defined set of peers to a dynamically changing set of leaders backed by a computational trust model is possible. Compared to allowing index entries to be inserted at any node, our model simplifies the problems of access control and search index pollution. All peers respond to search queries by maintaining a replica of a subset of the whole search index. The index automatically shards whenever the size of a shard exceeds a system defined threshold. That is, we bound the size of the search index at each peer to help bound the storage and bandwidth costs at individual peers. A search query is sent to all shards, and the client merges the results before presenting them to the user. In fact, redundant queries are sent multiple nodes in all the shards, with the first responders from each shard returning with high probability in sub second time. Such latency variance reduction techniques that trade off higher bandwidth for reduced search latency are becoming increasingly viable due to ever improving consumer network bandwidth.
 
 
 \section{Contribution}
 \label{sec: contribution}
 
-The main aim of the thesis is to come up with up with a approach for creating a \textit{Full Text Decentralized Search} engine. The main contribution of the thesis is as follows:
+The main contributions as part of thesis are as follows:
 
 \begin{itemize}
 	\item Design and implementation of a full text decentralized search engine.
-	\item Design and implementation of a weaker form of leader election protocol to elect a trusted node for a particular shard which would be responsible for implementing the decisions like addition, deletion and updation of entries in the system.
-	\item Designing a basic approach for the detection of the network partition and merge during the partition healing.
+	\item Design and implementation of a weaker form of leader election protocol to elect a trusted node for a particular shard which would be responsible for implementing the decisions necessary for the evolution of the system. For example operations like addition, deletion and updation of entries in the system will be implemented and coordinated by the leader of the shard.
+	\item Designing data structures necessary to help the system with the handling of the network partition merge.
 		
 \end{itemize}
 
@@ -320,13 +320,13 @@ The main aim of the thesis is to come up with up with a approach for creating a 
 
 %%    What does a reader (another x student -- where x is your study line) need to know to understand your report?
 %%    What have others already done?
-As part of this section, we will present a brief introduction about the full text search and distributed databases. In addition to this, the decentralized search prototype is developed in Kompics \cite{kompics}, so we will also be providing a brief introduction about the same. In addition to this, we will also be mentioning Git Merge protocols which is used as a motivation for the potential Network Partition Merge Strategy.
+As part of this section, we will present a brief introduction about the full text search and distributed databases. In addition to this, the decentralized search prototype is developed in Kompics \cite{kompics}, so we will also be providing a brief introduction about the same. We will also be mentioning Git Merge protocols which is used as a motivation for the potential Network Partition Merge Strategy.
 
 
 \section{Apache Lucene}
 
-Apache Lucene \cite{lucene} is a robust and extremely fast Java based indexing and full text search library, written by Doug Cutting in the year 1999. At core of Lucene is concept of documents which are containers of information that needs to be indexed. Lucene creates inverted index in which the information is broken down into words and the occurrence of the exact word in identified in different documents. A simple text search for the word looks up the matching documents in the index in O(1) time, which makes the lookup really fast. This ability to treat Documents as collection of fields with text is main reason behind the powerful nature of Lucene. This allows user to index files of any format like PDF, HTML, Excel etc. 
-Apart from this, Lucene library has been thoroughly tested and is being used by companies like Twitter and ElasticSearch \cite{elasticsearch} to provide full text search.
+Apache Lucene \cite{lucene} is a robust and extremely fast Java based indexing and full text search library, written by Doug Cutting in the year 1999. At core of Lucene, is concept of documents which are containers of information that needs to be indexed. Lucene creates inverted index in which the information is broken down into words and the occurrence of the exact word in identified in different documents. A simple text search for the word looks up the matching documents in the index in O(1) time, which makes the lookup really fast. This ability to treat Documents as collection of fields with text is main reason behind the powerful nature of Lucene. This allows user to index files of any format like PDF, HTML, Excel etc. 
+Apart from this, Lucene library has been thoroughly tested and is being used by companies like Twitter and ElasticSearch \cite{elasticsearch} to provide full text search capabilities in the system.
 
 \section{Kompics}
 Kompics \cite{kompics} is an \textit{Asynchronous Message Passing} framework which is based on Component Model. The main purpose of Kompics is to simplify the development of complex distributed applications by leveraging multi-core machines and providing a robust simulation framework with capability of providing reproducible results. 
@@ -354,22 +354,24 @@ Eric Brewer in the year 2000 put forward his opinion that in a distributed syste
 
 \section{Cassandra}
 Cassandra \cite{cassandra} is a highly available distributed key value system deployed for managing back-end services in Facebook. The system is developed for storing highly structured values. The system offers a simple API involving \textit{get, insert} and \textit{delete} operations.
-\par The system uses consistent hashing to identify the location of the node on the ring and data keys. A node is responsible for storing the keys which lie between the node and the successor. In order to prevent single point of failure, the keys are replicated over the \textit{N -1} successor nodes. Based on different policies for data replication, the other nodes used for replication of the key are selected. In addition to this, in case the load on a particular node increases, the system boots up separate light weight node and inject the node between the highly loaded node and its successor. As the new node joins, it becomes responsible for the keys between it and the successor.
+\par The system uses consistent hashing to identify the location of the node on the ring and data keys. A node is responsible for storing the keys which lie between the node and the successor. In order to prevent single point of failure, the keys are replicated over the \textit{N -1} successor nodes. Based on different policies for data replication, the other nodes used for replication of the key are selected. In addition to this, in case the load on a particular node increases, the system boots up separate light weight node and inject the node between the highly loaded node and its successor. As the new node joins, it becomes responsible for the keys between it and the successor thereby reducing the load existing nodes.
 
 \section{Dynamo}
 Dynamo \cite{dynamo} is Amazon's highly available key value store. The system is designed to focus on and provide availability even in event of network partition. The system's API provides a simple \textit{get(key)} and \textit{put(key, value)} functionality. 
 
-\par In order to provide the always write functionality, the system extensively makes use of the object versioning. Even in the event of network partitioning, the users can write to the system. The conflicts that arise after the partition merge are sometimes offloaded to user for resolving. The system also makes use of Consistent Hashing to determine the location of the nodes on the ring and the position of the key for the data to be stored. The node is responsible keys lying between himself and its successor. The system realizes the bias introduced by the consistent hash in terms of uneven load on different nodes. In order to resolve this, it uses a modified version of consistent hash in which the a node is assigned to multiple positions in the ring. In this way, the node becomes host for multiple regions in the ring.
+\par In order to provide the always write functionality, the system extensively makes use of the object versioning. Even in the event of network partitioning, the users can write to the system. The conflicts that arise after the partition merge are sometimes offloaded to user for resolving. The system also makes use of \textit{Consistent Hashing} to determine the location of the nodes on the ring and the position of the key for the data to be stored. The node is responsible for keys lying between itself and its successor. The system realizes the bias introduced by the consistent hash in terms of uneven load on different nodes. In order to resolve this, it uses a modified version of consistent hash in which the a node is assigned to multiple positions in the ring. In this way, the node becomes host for multiple regions in the ring.
 \par In order to search for a particular key, the consistent hash reveals the position of the key on the ring. The request is then routed to the node responsible the key. 
 
 
 \section{ElasticSearch}
 
-Elasticsearch \cite{elasticsearch} is a distributed, scalable and real time search engine which is built over Apache Lucene. Elasticsearch provides full-text search and analytics. It has been widely used for indexing and searching documents over popular websites like Soundcloud, Github, Wikipedia, StackOverflow etc. The steps to install the Elasticsearch server is relatively easy and the product ships with a predefined configuration which can be used to execute the elasticsearch instance over a single node. Each node in elasticsearch belongs to a cluster with a unique name which can be easily set in the configuration file during bootup. This cluster name is used to discover other nodes in the network.
+Elasticsearch \cite{elasticsearch} is a distributed, scalable and real time search engine built on top of Apache Lucene, which is a fast library written in Java used for full-text search. Elasticsearch uses Lucene internally for all the indexing and searching of documents in the system but exposes a simple RESTful API to perform different operations to the user. Elasticsearch distinguishes itself from being another wrapper over Lucene by being a treating the information to be stored as a document where its every field is indexable and searchable. In addition to this, it allows the user to perform complex queries over the data to generate different analytics which provides useful insights regarding the information indexed. Finally, as already mentioned, the system being distributed is able to scale up quickly to petabytes of structured and unstructured data.
+
+\par Elasticsearch has been adopted widely by websites like Soundcloud, Github, Wikipedia to provide users with full text search. Elasticsearch ships with a sensible defaults using which user can quickly get the system up and running over a single node. Apart from this, each node in the system belongs to a cluster with a unique name which can be easily defined in the configuration during bootup. The cluster name is mainly used to discover other nodes in the system belonging to the same cluster.
 
 \section{Solr}
 
-Solr \cite{solr} is an enterprise search server built by Apache allows user to index and search documents using REST like API. It is also powered by Lucene and therefore supports full text search. Solr is built over Apache's Zookeeper which makes it easy to scale up and down.
+Solr \cite{solr} is an enterprise search server built by Apache allowing user to index and search documents using REST like API. It is also powered by Lucene and therefore supports all of its full text search capabilities. Solr is built over Apache's Zookeeper which makes it easy for the system to scale up and down based on the load.
 
 
 
@@ -404,22 +406,20 @@ Solr \cite{solr} is an enterprise search server built by Apache allows user to i
 In this section, we will briefly discuss the overlay network over which the system is built. The two main components used to construct the overlay network are as follows: 
 
 \subsection{Gossiping}
-The system runs over a simple gossiping protocol which forms the basis for the overlay topology management. The gossiping protocol is inspired from the Peer Sampling Service \cite{samplingService} which provides each peer with a list of other peers in the system which is a uniform random sample  all the peers. The peers then exchange information with other peer selected from the list based on some well defined policies. The gossiping protocol are generally used in information dissemination, scalability, churn management etc.
+The system runs over a simple gossiping protocol which forms the basis for the overlay topology management. The gossiping protocol is inspired from the Peer Sampling Service \cite{samplingService} which provides each peer with a list of other peers in the system,  which is a uniform random sample all the peers. The peers then exchange information with other peer selected from the list based on some well defined policies. The gossiping protocols are generally used in information dissemination, handling scalability, churn management etc.
 
 
 \subsection{Structured Overlay}
 
-Gradient \cite{sacha2006discovery}, which is a class of structured P2P overlays forms the basis for the overlay of the system. In this overlay, the nodes select there neighbors based on a well defined preference function. The preference function used in case of the prototype developed as part of thesis is explained in detail in the later section \ref{ssec:utility}. The uniform random sample from the \textit{Peer Sampling Service} is fed into the Gradient. Based on the preference function the node selects the best peer with whom local information will be exchanged. Based on the information exchanged, each node constructs and maintains its own overlay.
+Gradient \cite{sacha2006discovery}, which is a class of structured P2P overlays forms the basis for the overlay of the system. In this overlay, the nodes select there neighbors based on a predefined preference function. The preference function used in case of the prototype developed as part of thesis is explained in detail in the later section \ref{ssec:utility}. The uniform random sample from the \textit{Peer Sampling Service} is fed into the Gradient. Based on the preference function the node selects the best peer with whom local information will be exchanged. Based on the information exchanged, each node constructs and maintains its own overlay.
 
 
 \section{Architecture}
 \label{sec:architecture}
 
-The actual structure of a distributed search engine is usually complex. It involves modules for the request routing, leader election, overlay management, load balancing and searching the data. Figure \ref{fig:architecture} depicts the arrangement of these modules in different layers in the overall application. Application Layer is the main layer that directly interacts with the client. The application module directly interacts with the Routing module and the Data Store layer. The data store module is simply a wrapper over Apache Lucene used to store and index data.
+The actual structure of a distributed search engine is usually complex. It involves modules for the request routing, leader election, overlay management, load balancing and searching for the data. Figure \ref{fig:architecture} depicts the arrangement of these modules in different layers in the overall application. Application Layer is the main layer that directly interacts with the client. The Application module contained in this layer directly interacts with the Routing and the Data Store module. The data store is simply a wrapper over Apache Lucene which is used to index and store data.
 
-\par The next layer is the Overlay Layer and as the name suggests it is responsible for constructing and maintaining the overlay over which the system is built. In addition to the overlay module, it is also comprised of leader election module, which helps to identify and elect the leader of the system. All the layers in order to function need the help of the Basic Services Layer which include essential modules like Timer and Network for configuring timeouts during asynchronous operations and interacting with other components during different operations. It is not necessary that each module interacts with all the modules in the underlying layers but have an access to the modules in case the need arises. In the below sections, we will be briefly explaining the key modules chosen from the different layers in terms of their responsibility and functionality.
-
-
+\par The next layer is the Overlay Layer and as the name suggests it is responsible for constructing and maintaining the overlay over which the system is built. In addition to the overlay module, it is also comprised of leader election module, which helps to identify and elect leader in different shards in the system. All of the layers mentioned above have access to the Basic Services Layer which include essential modules like Timer and Network for configuring timeouts during asynchronous operations and sending messages to different peers over the network in the system respectively. It is not necessary that each module interacts with all the modules in the underlying layers but have an access to the modules in case the need arises. In the below sections, we will be briefly explaining the key modules chosen from the different layers in terms of their responsibility and functionality.
 
 
 \begin{figure}[h]
@@ -440,30 +440,97 @@ The actual structure of a distributed search engine is usually complex. It invol
 \subsection{Leader Election Protocol}
 \label{ssec:leaderElection}
 
-In context of distributed systems various leader election protocols have been discussed \cite{bully, lamportPaxos}. Election of leader for a group of nodes in the system typically requires all the nodes to agree upon the leader. Once the leader gets elected, it coordinates between the nodes and helps the group to move forward. 
-\par As mentioned above, all the nodes usually need to know about the chapnode that would be elected as leader but in case of large scale system it would usually result in huge traffic in the system. As part of this thesis, we introduced a weaker form of leader election protocol known as \textit{Leader Selection}. As part of this protocol, we select a group of \textit{top K} nodes in the system. The node which has the highest utility among the K members tries to assert itself as the leader. Figure \ref{fig:p-arrange} provides a general overview of the system in which the top nodes are located at the center and as we go towards the edges of the system, the utility decreases as depicted by the color gradient. The node, in order to become the leader asks for promises from the other nodes in the selected group. In case, the nodes from the which the promises are sought, see anybody above the requesting node in terms of utility, rejects the promise. The requesting node which is trying to assert itself as leader, only moves to the commit phase after receiving promises from all the nodes in the group. In case any one of them rejects, the node resets the convergence counter and waits for the system to stabilize again. 
 
-\par In order to better understand the mechanism, we need to look at the overlay over which the system is built. We use the Gradient topology, which is a class of P2P topology in which the nodes in the systems organize themselves in the network in such a way that the nodes with the highest utility  are concentrated at the center of the network and the nodes with low utility lies on the outer edges of the network. We use a \textit{preference function}, according to which nodes have a higher preference to form connections with the nodes which have utility higher but closer to itself. In this way the nodes arrange themselves in the system. The gradient sends sample of the preferred nodes to the application. The application on receiving the sample of preferred nodes, executes a convergence function in which it tries to calculate a percentage change in the number of neighbors. In case the change is greater than a predefined threshold \textit{D}, the node resets the convergence counter. On the other hand, if the change is below the threshold the node increments the counter. The node only tries to assert itself the leader, when the convergence counter has reached a certain value and the node based on its own utility sees no other node above it. It is only then, the node starts the promise round with the other K nodes. 
-
-\par The main reason behind the use of convergence counter is due to the change in position of a node in the overlay. In case a node's utility decreases, its neighbors start forming connections with other nodes having higher utility and the node starts moving towards the edge of the system. Similarly, in case a node's utility increases, it starts moving up in the gradient during which it might be possible that during this rise, it doesn't locate any node above itself in terms of utility and wrongly thinks himself as leader. It could be avoided if the node looks at the change in the sample of neighbors provided by gradient on successive iterations and deduce that it is still rising in the gradient. Therefore, the main purpose behind convergence counter is to ensure that the position of the node has stabilized when it starts asserting itself as leader. 
-
-\par This process of determining if self node is a leader is carried out by every node in every shard in the system. Eventually the leader gets elected for every shard. In addition to leader, every shard also has a follower group selected by the leader itself. The purpose of the follower group is to help the leader with the replication of the commands and the steps taken by the leader. In case the leader dies, the next higher node usually from the follower group takes over the leadership for that shard. The main functionality of the members of the followers group is as follows:
+In context of distributed systems, a lot of approaches regarding the leader election have been discussed. Most of the approaches involve all the nodes in the system to know and agree about a node being elected as a leader. This process of agreement between all the nodes works fine in case the nodes in the system are limited are known to each other but as the scale of the system increases, the approach of having agreement between all the nodes becomes unfeasible mainly in regards to the bandwidth utilization in terms of messages exchanged and also the time required to elect a new leader which increases dramatically. In addition to this, as the system needs to be deployed over open networks where nodes can come and go as they want, it further exacerbates the issue as the time to reach an agreement may increase further because nodes taking part in election might suddenly leave which will result in election round being discarded.
+\par In order to make the leader election protocol suitable for our requirements of it being used to elect nodes as leader over Open Internet, we modified the protocol to be a weaker variant of the existing algorithms and is known as Leader Selection algorithm. The responsibility of the leader election is now handled by a small group of nodes in the system. The group is decided by the node asserting itself to be leader and is known as follower group. The decision taken by this group is then communicated to rest of the peers in reasonable time. This process helps in reducing the message and time complexity for electing a new leader. 
 
 
-\begin{enumerate}
 
-\item Reject all promises in case the node has already promised or is a part of follower group.
+\subsubsection{Eventual Leader Election:}
 
-\item Accept a promise in case the node doesn't see anybody above the requesting node in terms of utility.
+The leader election protocol developed as part of the thesis is a combination of the Paxos\cite{lamportPaxos}, Bully\cite{bully} and the Monarchical Leader Election\cite{guerraoui} algorithms. It resembles bully in terms of the node with the highest utility will try to enforce itself as the leader. In addition to this, in case the existing leader dies, the next best node in terms of utility will take its place which resembles Monarchical leader election. Finally, similar to Paxos, the leader selection algorithm also has :
 
-\item Expire a promise in case the commit message is not received before the timeout for a specific promise.
+\begin{itemize}
 
-\end{enumerate}
+\item \textbf{proposers}: nodes which will take over leadership in case current leader dies.
+\item \textbf{acceptors}: followers
+\item \textbf{learners}: all peers.
+
+\end{itemize}
+
+The selection of the leader is performed by the leader candidate with the follower group. The information gets disseminated to rest of the nodes through the pull mechanism.
+
+\subsubsection{Gradient Overlay}
+
+As mentioned earlier, each node asserting itself to be the leader, selects its group of nodes with which it will initiate the selection protocol. The immediate problem that arises is the identification of this group. The gradient topology helps the node asserting itself as a leader to identify this group. The gradient topology is based on a preference function which helps each peer to choose neighbors over the others based on the utility. The preference function used in the system helps the gradient topology to arrange the nodes with the higher utility towards the center of the system whereas the nodes with low utility are present towards the edges of the system. The nodes with the utility lying in between the two are present in the internal structure between the center and the edges. The gradient topology helps to provide a total order on the nodes. Ideally the node at the center of the gradient initiates the leader election protocol and it chooses the follower group to be \textit{topK} nodes. 
 
 
-As part of the leader selection mechanism, we try to elect a leader as soon as possible. In a very dynamic system where nodes can join and leave the system, it is very much possible that a better node comes along and try to assert itself as a leader even though a leader is already present thus violating the safety condition of having only a single leader per shard in the system. In order to prevent this, when a node gets elected as the leader, it along with the chosen follower group, artificially augments the utility by switching on the leader membership check. This check places the group at the center of the shard. In this way when a better node comes along, it cannot instantaneously start the election protocol because it's self membership check is switched off and it sees the current group as better than himself. 
+\subsubsection{Overlay Stability}
 
-\par It might be argued that the feature of artificially increasing the utility could lead to violation of fairness protocol, meaning that a node which became a leader initially, can become the leader for eternity in case the group membership check is not switched off. Therefore, it is the responsibility of the leader to locally switch off the leader group membership check and then look at the neighboring samples. In case the leader finds a better node, the leader simply backs of by terminating its membership. The follower group detects it and removes themselves from the group membership. The better node then starts the promise round itself and takes over the leadership for the current shard.
+The nodes in the system can join and leave the system whenever they want resulting in churn. In addition this, the utility of nodes can change therefore they can move in the gradient. Therefore, it might result in the non convergence of the overall gradient topology. In this situation, each node locally determines the stability of its neighbors by starting a convergence counter. On every shuffle round where each node updates its neighbors, the counter gets incremented in case the change in the view as compared to the previous view is below a predefined threshold. In case the change is more than the threshold it forces the node to reset the counter. The convergence counter enables each node to determine the local stability of the gradient as each node has only a subset view of the whole system. Nodes initiate the leader election protocol when the counter reaches a defined value.
+
+\subsubsection{Protocol Overview}
+
+Each node in the system periodically executes the leader code shown in Algorithm \ref{leader} and also the follower code as depicted in Algorithm \ref{follower}. As part of the leader code, the node checks if the conditions for being the leader holds. In case the conditions are satisfied, the node initiates a voting protocol to the \textit{topK} nodes in the system known as the follower group. On receiving the voting request, the follower code gets executed. It checks that whether node deserves to be the leader and in case all the conditions are fulfilled, it sends back as acknowledgement. Only on receiving the acknowledgments from all the nodes in the follower group will the node finally assert itself as the leader and initiates a lease at its own end and informs the follower group about the lease and the new leader round. 
+\par The leader uses its followers to replicate the decisions taken in order to ensure data redundancy. The leader after expiry of every lease will again check that whether conditions for it to be the leader holds. In case the conditions are not met, the leader stops with the lease extension. The lease eventually expires at the followers group and they again wait for a new leader to emerge. 
+
+
+\subsubsection{Utility Values}
+
+
+In this section we will be giving a brief introduction concerning the parameters used by the different nodes to calculate their utility. It is explained in greater depth in the Section {ref:utility}. The nodes based on the utility arrange themselves in the overlay with the higher utility ones getting concentrated at the center of the system. The utility is decided based on following parts:
+
+\begin{itemize}
+
+\item \textbf{leaderGroupMembership}: boolean value indicating that the node is part of either a leader or part of follower group.
+\item \textbf{replicationScore}: The decisions that are taken by the leader which have been replicated by a particular node.
+\item \textbf{peerScore}: Score of a peer based on its internal properties like bandwidth and processing speed.
+\item \textbf{identifier}: identifier of the peer.
+
+\end{itemize}
+
+The \textit{leaderGroupMembership} checks gets enabled when the node either gets elected as a leader or becomes a part of the follower group. This ensures that the follower group remains as the \textit{topK} nodes during the lease round as the nodes joining the system or already present will have the check being disabled. This check if enabled provides a boost to the utility of the node making it migrate towards the center of the gradient. The \textit{replicationScore} is the number of decisions taken by the leader which have been replicated by a particular node. The \textit{peerScore} is decided based on the internal characteristics of the node like bandwidth, processing speed available to the node. The last is the \textit{identifier} of the node which is used as a tie breaker and provide total order on nodes. 
+
+
+\subsubsection{Leader Behavior}
+
+The behavior of the leader is depicted in Algorithm \ref{leader}. The leader module in each peer checks the below conditions periodically to determine if the node needs to initiate the leader election protocol :
+
+\begin{itemize}
+\item determine locally that the gradient is stable and converged.
+\item check that based on its utility it doesn't have any neighbors with higher utility.
+\item check that the leader group membership check is switched off meaning node is not part of any follower group.
+\end{itemize}
+
+Once the conditions are met, the node initiates the voting process as part of leader election protocol. It selects topK nodes which will be part of  its follower group and sends them a promise request meaning that they accept the node as their leader. It then waits for their responses. Rejection from any node means that their might be a node which is better than the leader which has not yet been discovered by the leader itself. The leader then cancels the current election round and wait for the conditions to be met again before initiating the protocol.
+On the other hand, if the leader receives promises from all the nodes in its follower group, it informs the follower group about it being elected as leader which results in nodes starting a lease for the current leader.  Before the expiry of the lease, the leader again checks that the conditions for itself to become a leader are met and in case the conditions hold, it informs its follower group about extension of the lease. The follower group at this point might not be the same as in previous round. The node recalculates the topK nodes before extending the lease and send them the extension request. In case the lease is not extended it expires and the node resets the leader group membership check.
+
+It might also be possible that at the time of extension, the leader might discover a node which is better than the leader itself and in order to promote fairness in the system, the leader will not extend its lease anymore and allow the new node with better utility to impose itself as the new leader.
+
+
+\subsubsection{Follower Behavior}
+
+The behavior of the nodes in the follower group is depicted in Algorithm \ref{follower}. Each node in follower group accepts the promise request from the node in case it satisfies the below conditions:
+
+\begin{itemize}
+\item the node has not already promised to another node.
+\item the utility of the node requesting the promise is better than anybody that the node has seen.
+\item the node itself is not a part of follower group.
+\end{itemize}
+
+In case the above conditions hold, the node sends an acknowledgement in regard to the promise request. The above condition also prevents the emergence of two leaders simultaneously in case the follower group of the two nodes trying to elect themselves as leader overlap with atleast one node. Once the node becomes part of the follower group it will switch on the leader group membership check and boosting its utility. It will also reject the promise request from any other node in this state.
+
+
+
+
+\subsubsection{Multiple Leaders}
+
+The leader module on each node, checks whether the conditions for becoming a leader are met and in case the conditions hold initiate the leader election protocol. Ideally, based on converged system only a single node with the highest utility should initiate the leader election protocol and be chosen as the leader but under certain special circumstances multiple nodes can initiate leader election protocol and get elected as leaders. The links with which the nodes communicate with each are fair loss links and therefore can drop messages. It might be possible that a large number of messages are being dropped by the links and therefore two different nodes are unable to detect each other and start election protocol. As part of topK nodes that are chosen by the two nodes, event if a single node overlaps it would prevent the election of two nodes as leaders simultaneously but in case the topK group of nodes has no common member which can happen in event of network partitioning, the two nodes will be elected as two leaders. Once the network heals, they will detect the presence of the other and one of the elected nodes will give up leadership. 
+
+
+\subsubsection{Information Dissemination}
+
+Once the leader gets elected the information about the new leader is initially present with the follower group. This information needs to be disseminated in the system to other peers. As each node in the overlay can reach the topK nodes in O(logN) time, the information gets pulled by the nodes near the center from the center and nodes lying away from the center pull the information from their parent provided to them by the gradient in reasonable time.
 
 \begin{figure}[h]
 	\includegraphics[scale=0.5]{p2p}
@@ -595,12 +662,36 @@ As part of the leader selection mechanism, we try to elect a leader as soon as p
 
 
 
-
-
 \subsection{Preference and Utility Function}
 \label{ssec:utility}
-Each peer in the system has an associated utility based on the state of the peer at that instant. As the system evolves with time, so does its utility. As already mentioned, in order to build the overlay network, system uses a \textit {Preference Function} based on the utilities of the nodes. A peer uses this preference function mainly during the selection of peer for shuffling and to keep track of preferred neighbors. The preference function in case of the prototype developed is selection of the peers which have a higher utility than self but closer to self with higher probability. As seen in the Figure \ref{fig:preference}, if we assume utility having an absolute value, as per the preference function, \textit{Peer C} will prefer \textit{Peer A} over \textit{Peer B}, even though both have higher utility than C because A's utility is closer to utility of C.
 
+Gradient Topology is a class of P2P topology which helps in constructing the overlay of the system in such a way that the nodes with higher utility are concentrated at the center and the nodes with low utility are present on the edges of the system. The topology makes use of the utility function which is a system based function used to achieve total order on the nodes. As per the current system, the utility function is composed of four scalars:
+
+\small 
+\begin{equation*}
+    LeaderGroup \prec ReplicationScore \prec PeerScore \prec PeerID
+\end{equation*}
+\normalsize
+
+The parameters contained in the utility function are used to provide score to each peer in the system. In order to compare the utilities of two different peers, we start comparing the parameters mentioned above in direction from left to right. In case the outcome cannot be decided by a particular parameter comparison, the comparison moves to the next parameter. The tie breaker is the last parameter i.e. peer identifier. In order to better understand the utility function used in the system, we will be providing brief description about the parameters used:
+
+\begin{itemize}
+
+
+\item \textbf{leaderGroupMembership}: It is a boolean check which indicates if the node is a leader or part of the follower group. Once the node becomes part of follower group, it switches on the check which provides a boost to its utility as compared to other nodes in the system which are not part of the follower group. This parameter is chosen as the first in comparison because once a peer gets elected as the leader and chooses its follower group, it needs the group to be stable and be in the topK in the system. 
+
+
+\item \textbf{replicationScore}: The next parameter in comparison is the replication score which is a numerical value indicating the decisions that are taken by the leader and which have been replicated by the node itself. As the system evolves and new information gets added or updated by the leader, these decisions are also replicated at other nodes in the system. A node with higher value of replicationScore is better suited to take  over leadership in case the leader crashes because it would have replicated most of the decisions taken by the leader and information loss if any would be minimized.
+
+\item \textbf{peerScore}: The peerScore is another parameter having a numerical value indicating the capacity of the node to serve audience in the system. The nodes which have higher bandwidth, computational and storage capacity have a better chance to serve a wider audience in terms of information dissemination. The score regarding the computational and storage capacity, bandwidth and session time gets aggregated and represent the peer score. Therefore, these peers have a higher peer score and should be located near the center of the overlay.
+
+
+\item \textbf{peerId}: This parameter is used to represent the identifier of the peer. It is also used as the tie breaker in case all the values before are unable to decide a peer with better utility and therefore the last in the comparison order. It is based on the assumption that all the nodes that join the system, do that with a distinct identifier.
+
+\end{itemize}
+
+
+The total order achieved on the nodes using the utility function is used to assign ranks to the nodes with the leader with the highest utility being assigned a rank 0. Therefore, in a system with N nodes, N ranks are being assigned. The main reason behind assigning ranks is the creation of fingers which are long range links used as paths for faster dissemination of data. A node with rank R will try to create fingers i.e. links with nodes with ranks near to value ( R / 2 ). Once these links are created, node periodically gossips with the long range links to refresh the links in case the nodes behind the fingers have crashed. As there is no centralized control in the system, the mechanism to estimate self rank is based on the ranks of the neighbors of a particular node. Each node identifies the maximum rank among the neighbors of size S, it then calculates its own rank by Max(R1, R2, ... RS) - S. As the neighbors keep on changing due to churn and updation of self utility, so does the rank keep of changing. The rank of the node which gets elected as the leader becomes zero. 
 
 \begin{figure}[h]
 	\centering
@@ -609,25 +700,12 @@ Each peer in the system has an associated utility based on the state of the peer
 	\label{fig:preference}
 \end{figure}
 
-
-
-
-\par The preference function is based on the utility of a particular peer. It helps a peer to select a preferred peer from a collection of peers. The utility function is generally any metric or set of rules usually depending upon the application requirement which would help to create a total order on the peers in the system. In case of prototype developed as part of thesis, the utility function is as follows:
-
-\small 
-\begin{equation*}
-    LeaderGroup \prec ReplicationScore \prec PeerScore \prec PeerID
-\end{equation*}
-\normalsize
-
-While comparing the utility values of two different nodes, we simply compare them in the order defined above i.e from \textit {left to right}. We move on to the next parameter in the utility function in case total ordering cannot be achieved on the previous parameter. The utility comparison function starts by looking at the leader group membership check which indicates if a node is part of leader group for a particular shard. In case a node has this check switched on, the utility of the node suddenly increases compared to the other peers in the same shard. The Replication Score parameter indicates the number of the entries that a peer has its local lucene store. As system evolves and more entries are added in the shard the peer with a higher \textit{Replication Score} count indicates a better node in terms of serving latest entries added. Keeping in view the fairness protocol, we also have a \textit{PeerScore} metric in the utility function. This score helps to identify the peers with better resources in terms of computational capability, higher bandwidth. These nodes are given importance as they can easily serve a larger audience in the shard. The peer id is used a tie breaker in the function. We assume that the peers joining the system have unique identifiers.  In this way, we achieve a total order on the peers in the system.
-
-\par The benefit of achieving total order on the nodes is the ability to assign ranks to the nodes with the lowest rank i.e. 0 being assigned to the \textit{leader} of the shard. As the system is continuously evolving, the utility of peers is changing and therefore the peers in the shard based on the neighboring peers can then adjust there own ranks. The purpose of assigning ranks is the creation of fingers which are nothing but long range links that each peer hold. Based on the rank, the peer usually try to find fingers i.e. links to the peers that are half its own rank. These fingers help speeding up the dissemination of the updates in the system.
+\par The gradient topology constructs and maintains the overlay by forming links with a set a preferred nodes in the system. The gradient also selects a node from this set and exchange information regarding the change in the self utility and neighbors periodically. In order to decide the set of preferred nodes, gradient uses a \textit{Preference Function} which itself is based on the utility function. In the prototype developed as part of thesis, the preference function indicates that a node will have a higher preference to form link with the node having a utility higher but closer to a node's own utility. In order to better explain the statement, we assume that we have three peers having identifiers as A, B and C. Assuming the utility of a peer could be represented on an absolute scale as depicted in Figure \ref{fig:preference}, we can see that PeerA has the highest utility  followed by PeerB and then by PeerC. The preference function indicates that PeerC will have a higher probability of forming link with PeerB than with PeerA as even though both have utility greater than its own, PeerB has utility which is closer to self. \textit{Softmax} approach is being used with a \textit{low temperature} resulting a greedy approach while creating the overlay. Apart from this, gradient also uses the  preference function while selecting a node from the neighbor list to shuffle with. At this stage, the softmax approach with a \textit{higher temperature} is used to increase the range over which the node is selected for shuffling. 
 
 
 \subsection{Pull Protocol}
 
-The general overall functioning of the system involves electing a leader i.e a node with the highest utility as the leader of shard. The protocol employed for election of leader is \textit{Leader Selection} which is explained in detail in section \ref{ssec:leaderElection}. The leader is responsible for taking decisions regarding addition, searching of entries in the shard. In case of entry addition, in order to make the system highly available and prevent a single point of failure the leader performs a two phase commit to the nodes elected as part of leader group. Once the entry has been replicated to the leader group nodes, the leader returns back a successful response to the client. Now the peers can either push the entries to the neighboring nodes or nodes need to pull the entries added. The push protocol seems lucrative in terms that the peers as soon as they discover about a new entry, push the entry to other nodes. It prevents the other nodes constantly looking for the entries by asking the higher utility nodes. But there are major flaws in this scheme which are mentioned below:a high level view of the system involving routing requests to specific shards based on the category. In this section, we will be discussing its key modules.
+The whole system is managed by a small number of peers which are the leaders of different shards in the system. The protocol employed for election of leader is \textit{Leader Selection} which is explained in detail in section \ref{ssec:leaderElection}. The leader is responsible for taking decisions regarding addition or updation of entries in the shard. In order to make the system highly available and prevent a single point of failure, the leader replicates the decision over the follower group. Once the decision has been replicated to the follower group, the leader returns back a successful response to the client which initiated the operation. This decision needs to be disseminated to other nodes in the shard which can be achieved by either using a push protocol in which nodes send information to their neighbors or through a pull protocol, which is periodically executed by each node and asks for any updates from the nodes having higher utility. The push protocol seems lucrative because the nodes will push information to other nodes only when a new information gets available to them. It prevents the nodes from periodically requesting for any new information from the neighboring nodes and thus saving bandwidth. But there are major flaws in the push information scheme which are enumerated below:
 
 \begin{enumerate}
 
@@ -640,14 +718,13 @@ The general overall functioning of the system involves electing a leader i.e a n
 
 \end{enumerate} 
 
-As a result, we introduce pull protocol, in which the nodes constantly request the peers higher than self in terms of utility about any latest decisions taken in the shard by the leader. This way the information gets disseminated in the system. The dissemination protocol will be explained in greater detail in section \ref{ssec:gossip}
-
-
+Therefore, when the information needs to be disseminated in whole of the system, a pull protocol is employed whereby every node periodically requests for the next decisions that are taken by the leader and not yet seen by the requesting node. Apart from this, the system involves the use of push protocol by the leader when the decision needs to be replicated to the follower group. The information gets pushed by the leader to the nodes in the follower group which gets pulled by the rest of the nodes in the system using a pull protocol. Even though we have briefly talked about information dissemination in this section, it is explained in detail in Section 
+\ref{ssec:gossip}.
 
 \subsection{Gossip Based Data Dissemination}
 \label{ssec:gossip}
-Once a node becomes a leader, it is implicitly trusted by other members in the shard. Initially the information of a node becoming a leader is only published at the leader group chosen by the leader. This information then gets pulled by other peers in the system. In this situation, it might be very much possible that a Byzantine Node might start publishing wrong information to the peers during the pull protocol. In order to avoid such situations, a peer during the pull protocol, requests updates from a predefined configurable peers usually three that are above itself in terms of utility.  The peers respond with the hashes of the information. Only the information for which the hashes match from all the nodes is then pulled from anyone of the responding peers. 
-\par This approach is being used for securely disseminating the leader information in the system. In addition to this, entry dissemination is also based on this protocol. We think that this approach is secure enough in the sense that it is highly unlikely for all the nodes that are requested by peer to provide updates that are faulty.a high level view of the system involving routing requests to specific shards based on the category. In this section, we will be discussing its key modules.
+Once a node becomes a leader, it is implicitly trusted by other members in the shard. Initially the information of a node becoming a leader is only published to the follower group which is chosen by the leader. This information then gets pulled by other peers in the system. In this situation, it might be very much possible that a Byzantine Node might start publishing wrong information to the peers during the pull protocol. In order to prevent this, a peer during the pull protocol, requests updates from a predefined configurable peers usually \textit{three} that are above itself in terms of utility.  The peers respond with the hashes of the information. Only the information for which the hashes match from all the nodes is then pulled from any one of the responding peers. 
+\par This approach is being used for securely disseminating the leader information in the system. In addition to this, entry dissemination is also based on this protocol. We think that this approach is secure enough in the sense that it is highly unlikely for all the nodes that are requested by peer to provide updates that are faulty.
 
 
 \subsection{Load Balancing}
@@ -659,10 +736,10 @@ As the system evolves, the leader receives request for adding new entries in the
 
 \subsection{Routing}
 \label{ssec:routing}
-utility
+
 \par The client in order to look for the entries in the system generates a search request. The search request is then sent to the application running at the client node. The protocol of handling search request by the application involves locating the items matching the search request in the local data store. Once the matching items are located, necessary information is extracted from the items and response is generated to be sent back to the client. 
 
-\par The above approach allows application to locate all the matching items in case all the data is located in the local data store. As part of load balancing protocol which explained in Section \ref{ssec:loadBalance}, the data gets distributed between the nodes in different shards. Now, it might be possible that the item that the client is looking for is located in other shards. Therefore, the application now needs to route the request to the nodes present in these shards. In order to do so, the application needs to have information about the shards and sample of nodes located in each shard. Therefore, each peer has a \textit{Routing} component which keeps track of the shards in the system and sample of nodes inside each shard. The component periodically gets random set of samples from the peer sampling service. Each node sample contains information regarding the shard to which it belongs to. Using this information, the component maps the descriptor to the shard. Now, when the application receives a search request, it gets information about all the shards and a set of descriptors in each shard. The query is then sent in parallel to all the shards. 
+\par The above approach allows application to locate all the matching items in case all the data is located in the local data store. As part of load balancing protocol which explained in Section \ref{ssec:loadBalance}, the data gets distributed between the nodes in different shards. Now, it might be possible that the item that the client is looking for is located in other shards. Therefore, the application now needs to route the request to the nodes present in these shards. In order to do so, the application needs to have information about the shards and sample of nodes located in each shard. Therefore, each peer has a \textit{Routing} abstraction which keeps track of the shards in the system and sample of nodes inside each shard. The component periodically gets random set of samples from the peer sampling service. Each node sample contains information regarding the shard to which it belongs. Using this information, the component maps the node descriptor to the shard. Now, when the application receives a search request, it gets information about all the shards and a set of descriptors in each shard. The query is then sent in parallel to all the shards. 
 
 
 \subsection{Large Fanout}
@@ -671,7 +748,7 @@ In this section, we will be discussing the concept of \textit{latency variabilit
 
 \par We might argue that the occurrence of the phenomenon is not often enough to cause alarm but as the scale of the system keeps on growing as in case of Google where the data is divided into multiple shards, the search request needs to be fanned out to a larger audience and therefore the probability of occurrence of long tail increases as the requesting node needs to wait for responses from all the shards. This leads to unacceptable response times occurring with higher probability. 
 
-\par Google uses a lot of innovative approaches to solve issue of latency variability as mentioned by Jeffery Dean in this talk \cite{jeffDean}. The approach that we are interested and have adapted for our prototype involves instead of sending to a single node in every shard the search request, we send it to a predefined number of nodes in that shard. We simply wait for the first response from that shard and discard the rest. The purpose behind it is to reduce the dependency on the slow performing node by replicating the request to other nodes within the same shard. Once all the shards have responded or search request timed out, we collect, filter and augment the results with some metadata. This data is then returned to the client. In this way the system makes significant steps towards preventing long tail in the search request's response times.
+\par Google uses a lot of innovative approaches to solve issue of latency variability as mentioned by Jeffery Dean in this talk \cite{jeffDean}. The approach that we are interested and have adapted for our prototype involves instead of sending to a single node in every shard the search request, we send it to a configurable number of nodes in that shard. We simply wait for the first response from that shard and discard the rest. The purpose behind it is to reduce the dependency on the slow performing node by replicating the request to other nodes within the same shard. Once, all the shards have responded or search request timed out, we collect, filter and augment the results with additional metadata. This data is then returned to the client. In this way the system makes significant steps towards preventing long tail in the search request response times.
 
 
 \chapter{Implementation}
