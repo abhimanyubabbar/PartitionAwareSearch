@@ -27,6 +27,14 @@
 \documentclass[12pt,a4paper,twoside,openright]{book}
 %%\documentclass[12pt,a4paper,twoside,openright]{memoir}
 
+
+%\makeatletter
+%\renewcommand*\cleardoublepage{\clearpage\if@twoside
+%  \ifodd\c@page \hbox{}\newpage\if@twocolumn\hbox{}%
+%  \newpage\fi\fi\fi}
+%\makeatother
+
+
 \usepackage[msc,blankmsg]{costhesis}
 %\usepackage[T1]{fontenc}
 %%\usepackage{pslatex}
@@ -272,6 +280,11 @@ Acronyms and Abbreviations.
 
 \mainmatter
 \setcounter{secnumdepth}{5} 
+
+\makeatletter
+\@openrighttrue
+\makeatother
+
 \chapter{Introduction}
 \label{chap:introduction}
 %% Longer problem statement
@@ -330,7 +343,7 @@ Apart from this, Lucene library has been thoroughly tested and is being used by 
 
 \section{Kompics}
 Kompics \cite{kompics} is an \textit{Asynchronous Message Passing} framework which is based on Component Model. The main purpose of Kompics is to simplify the development of complex distributed applications by leveraging multi-core machines and providing a robust simulation framework with capability of providing reproducible results. 
-\par As mentioned above, Kompics is internally based on a Component Model in which components are reactive state machines. They execute concurrently and communicate asynchronously by message passing. These messages are known as \textit{Events}, which are immutable typed objects. The information contained in these events is in form of attributes. Each component usually exposes an interface to other components known as a\textit{Port}. These ports define the events that can pass through them and therefore act as filters by allowing specific events. In order to send an event between components, we need a communication medium or a link. This abstraction is known as \textit{Channel}. A channel connect ports of complimentary nature. The events sent over the channel are transferred and received by other component in FIFO order. In addition to this, each Component contains \textit{Handlers} which are first class procedures. Each handler is responsible for handling a particular type of event and gets executed when the component receives that event. The handler has capability to in turn trigger new events on other components. 
+\par \textit{Reactive State Machines} form the core of Kompics component model. They execute concurrently and communicate asynchronously by message passing. These messages are known as \textit{Events}, which are immutable typed objects. The information contained in these events is in form of attributes. Each component usually exposes an interface to other components known as a\textit{Port}. These ports define the events that can pass through them and therefore act as filters by allowing specific events. In order to send an event between components, we need a communication medium or a link. This abstraction is known as \textit{Channel}. A channel connect ports of complimentary nature. The events sent over the channel are transferred and received by other component in FIFO order. In addition to this, each Component contains \textit{Handlers} which are first class procedures. Each handler is responsible for handling a particular type of event and gets executed when the component receives that event. The handler has capability to in turn trigger new events on other components. 
 
 
 \section{Google Search}
@@ -787,11 +800,15 @@ As part of current implementation, the prototype supports the following operatio
 \end{itemize}
 
 
-\section{Entry Semantics}
-
+\section{System Data Structures}
+ 
+In large scale distributed systems, \textit{availability} is achieved through data replication while the \textit{consistency} is achieved using Eventual Consistency strategies. The updates to an object are committed on a single node and then executed in the background on other nodes containing the replica of the object. This makes the system vulnerable to conflicts arising out of concurrent operations on different nodes which needs to be manually resolved or rollback of the updates needs to be performed. Marc Shapiro et al formally introduced the concept of Conflict Free Replication Data Types \cite{crdt} \cite{crdtConcurrencyWithoutControl} which  enables the concurrent updates which commute to be executed on the replicas of an object on different nodes which can eventually be resolved locally without consensus. In addition to this, the author introduced the concept of dense identifier spaces required to identify the commutative concurrent operations \cite{crdtConcurrencyWithoutControl}. The entry identifier and other related data structures used in the system are motivated by the concept of these \textit{dense  identifier spaces}. 
+ 
+ 
 \subsection{Entry Identifier Structure}
 \label{ssec:entryIdStructure}
-The structure of the identifier used by the system to identify the entries is mainly composed of three parts which will be briefly explained in this section:
+
+The structure of the identifier used by the system to identify the entries is mainly composed of three parts which will be briefly explained in this section: 
 
 \begin{tcolorbox}
 \textbf{Identifier Structure:} \textless Epoch, LeaderId, EntryId \textgreater
