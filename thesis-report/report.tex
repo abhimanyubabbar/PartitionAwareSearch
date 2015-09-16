@@ -555,7 +555,7 @@ Once the leader gets elected the information about the new leader is initially p
 
 \begin{algorithm}[h]
 \caption{Eventual Leader Selection - Leader} 
-\label{leader}
+\label{leader} 
 \begin{algorithmic}[1]
 \Upon[init]{nodeId}
   \State $selfId := nodeId;$ $round := 0;$
@@ -594,6 +594,16 @@ Once the leader gets elected the information about the new leader is initially p
   \EndIf
 \EndUpon
 
+\algstore{leader} 
+
+\end{algorithmic}
+\end{algorithm}
+
+
+\begin{algorithm}
+\begin{algorithmic}[1]
+
+\algrestore{leader}
 \Upon[promiseNack]{pNodeId, pRound} 
   \If{pRound = round}
     \State $round++;$
