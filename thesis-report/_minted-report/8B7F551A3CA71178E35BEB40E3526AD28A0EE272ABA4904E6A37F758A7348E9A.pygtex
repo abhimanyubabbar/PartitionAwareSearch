@@ -1,0 +1,11 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGborland{k+kt}{int} \PYGborland{n+nf}{main}\PYGborland{p}{()} \PYGborland{p}{\PYGborlandZob{}}
+  \PYGborland{k+kt}{int} \PYGborland{n}{scalar} \PYGborland{o}{=} \PYGborland{l+m+mi}{2}\PYGborland{p}{;}
+  \PYGborland{k+kt}{int} \PYGborland{n}{factor} \PYGborland{o}{=} \PYGborland{l+m+mi}{3}\PYGborland{p}{;}
+  \PYGborland{k+kt}{int} \PYGborland{n}{result} \PYGborland{o}{=} \PYGborland{n}{scalar} \PYGborland{o}{*} \PYGborland{n}{factor}
+
+  \PYGborland{n}{printf}\PYGborland{p}{(}\PYGborland{l+s}{\PYGborlandZdq{}hello, world with \PYGborlandZpc{}d\PYGborlandZdq{}}\PYGborland{p}{,} \PYGborland{n}{result}\PYGborland{p}{);}
+
+  \PYGborland{k}{return} \PYGborland{n}{result}\PYGborland{p}{;}
+\PYGborland{p}{\PYGborlandZcb{}}
+\end{Verbatim}

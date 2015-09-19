@@ -1,0 +1,6 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+\PYGborland{k+kt}{int} \PYGborland{n+nf}{main}\PYGborland{p}{()} \PYGborland{p}{\PYGborlandZob{}}
+  \PYGborland{n}{printf}\PYGborland{p}{(}\PYGborland{l+s}{\PYGborlandZdq{}hello, world\PYGborlandZdq{}}\PYGborland{p}{);}
+  \PYGborland{k}{return} \PYGborland{l+m+mi}{0}\PYGborland{p}{;}
+\PYGborland{p}{\PYGborlandZcb{}}
+\end{Verbatim}

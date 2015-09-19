@@ -1,0 +1,37 @@
+\BOOKMARK [1][-]{section.1}{Scenarios}{}% 1
+\BOOKMARK [2][-]{subsection.1.1}{Very Short Lived Partition}{section.1}% 2
+\BOOKMARK [2][-]{subsection.1.2}{Short Lived Partition}{section.1}% 3
+\BOOKMARK [2][-]{subsection.1.3}{Medium Lived Partition without External Intervention}{section.1}% 4
+\BOOKMARK [2][-]{subsection.1.4}{Medium Lived Partitioned With 3rd Party Intervention}{section.1}% 5
+\BOOKMARK [2][-]{subsection.1.5}{General Network Partition Without Sharding}{section.1}% 6
+\BOOKMARK [1][-]{section.2}{Special Cases}{}% 7
+\BOOKMARK [2][-]{subsection.2.1}{Split Point Case}{section.2}% 8
+\BOOKMARK [2][-]{subsection.2.2}{Buffered Leader Unit}{section.2}% 9
+\BOOKMARK [2][-]{subsection.2.3}{Partition Aware Gradient}{section.2}% 10
+\BOOKMARK [1][-]{section.3}{Leader Election Protocol}{}% 11
+\BOOKMARK [1][-]{section.4}{Algorithm}{}% 12
+\BOOKMARK [1][-]{section.5}{Network Partitioning}{}% 13
+\BOOKMARK [1][-]{section.6}{Abstract}{}% 14
+\BOOKMARK [1][-]{section.7}{Introduction}{}% 15
+\BOOKMARK [2][-]{subsection.7.1}{Motivation}{section.7}% 16
+\BOOKMARK [2][-]{subsection.7.2}{Delimitations}{section.7}% 17
+\BOOKMARK [2][-]{subsection.7.3}{Contribution}{section.7}% 18
+\BOOKMARK [2][-]{subsection.7.4}{Outline}{section.7}% 19
+\BOOKMARK [1][-]{section.8}{Background}{}% 20
+\BOOKMARK [1][-]{section.9}{Related Work}{}% 21
+\BOOKMARK [1][-]{section.10}{References}{}% 22
+\BOOKMARK [1][-]{section.11}{Design}{}% 23
+\BOOKMARK [2][-]{subsection.11.1}{System Model}{section.11}% 24
+\BOOKMARK [2][-]{subsection.11.2}{Overlay Network}{section.11}% 25
+\BOOKMARK [2][-]{subsection.11.3}{Network Partition Merge}{section.11}% 26
+\BOOKMARK [2][-]{subsection.11.4}{Architecture}{section.11}% 27
+\BOOKMARK [1][-]{section.12}{Implementation}{}% 28
+\BOOKMARK [2][-]{subsection.12.1}{Overlay Network}{section.12}% 29
+\BOOKMARK [2][-]{subsection.12.2}{Operations}{section.12}% 30
+\BOOKMARK [1][-]{section.13}{Evaluations}{}% 31
+\BOOKMARK [2][-]{subsection.13.1}{Experimental Setup}{section.13}% 32
+\BOOKMARK [2][-]{subsection.13.2}{Workload Setup}{section.13}% 33
+\BOOKMARK [2][-]{subsection.13.3}{Convergence Experiment}{section.13}% 34
+\BOOKMARK [2][-]{subsection.13.4}{Add Entry Throughput}{section.13}% 35
+\BOOKMARK [2][-]{subsection.13.5}{Churn Experiment}{section.13}% 36
+\BOOKMARK [2][-]{subsection.13.6}{Flash Crowd Experiment}{section.13}% 37
