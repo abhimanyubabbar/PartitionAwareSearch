@@ -908,28 +908,28 @@ In section \ref{ssec:entryIdStructure} we introduced the concept of the dense id
 \chapter{Evaluations}
 \label{chap:eval}
 
-In this section we will be discussing about the experiments that were performed as part of thesis to demonstrate the viability of the design.
+In order to demonstrate the viability of the design of the system, we performed various experiments which will be discussed in this section.
+
 
 \section{Experimental Setup}
 
-The evaluations were performed on the machine with the following specifications:
+The experiments were performed on the machine with the following specification:
 
 \begin{itemize}
 \item 8GB of RAM
 \item Eight Cores (Intel(R) Core(TM) i7 CPU 860  @ 2.80GHz)
 \end{itemize}
 
-As mentioned earlier, the prototype is developed in Kompics which is an event driven asynchronous framework written in Java. Kompics has its own single threaded simulation environment. The nodes in simulation were booted up on a single machine as part of the experiment. In order to communicate with the nodes during different phases of the tests, a helper module was used to keep track of all the nodes started in simulation. A special node known as the \textbf{leader node} was also started with the lowest value of the identifier which allowed the node to become leader during the initial leader election phase. \\
+The prototype is developed in Kompics which is an event driven asynchronous framework written in Java. In order to achieve reproducible results, Kompics has single threaded simulation environment. As part of experiment a cluster consisting of several nodes is booted up in simulation on a single machine. A node in simulation resembles an actual deployed peer having its own separate component stack and address. As the nodes are on the same machine, the address of each node has similar IpAddress and port but different identifier. In order to communicate with the nodes during different phases of the simulation, a basic helper module is used to keep track of the nodes in simulation. A special node known as the \textit{leader node} is initiated with the lowest identifier value which enables the node to become leader during the initial leader election phase.
 
-Each peer in the system is composed of different components, each of which have there own well defined tasks. In addition to this, in order to track the overall health and status of the cluster, node responsible for aggregating information from all the nodes in the system is initiated. At fixed intervals, all components within a peer send their state to the a specialized local component known as \textbf{local aggregator} component. The component simply aggregates the data received and forwards it to the global aggregator component. In this way,  we are able to keep track of the overall status and health of the system.
+\par Apart from this, in order to monitor the health of the cluster as a whole, a special \textit{Aggregator Module} is built. As each node is composed of various components handling separate tasks, a \textit{LocalAggregator} component is introduced to aggregate the information at node level. This module periodically pushes the information to the \textit{GlobalAggregator} which as the name suggests stores the information from various nodes in the system. The aggregator at the global level also exposes option to register different processors to be invoked on the information aggregated. Depending upon the processor, specific information from the aggregated state is processed and different aspects of the cluster like average search response times, average entry replication lag etc. are analyzed.  
 
 
 \section{Workload Setup}
 
-The simulations were executed on a cluster of two hundred nodes, unless otherwise explicitly stated. In order to assure the reproducibility of the results, the framework is inherently single threaded due to which the limiting factor concerning the scale of experiments was the strength of the processing unit of the machines used in simulation. \\
+The experiments are executed on a cluster of \textit{Two Hundred Nodes}, unless otherwise explicitly stated. In order to assure the reproducibility of the results, the Kompics simulation framework is inherently single threaded due to which the limiting factor concerning the scale of experiments is the strength of the processing unit of the machine.
 
-Below is the list of the different parameters that were tuned for the simulations:
-
+\par Below is the list of the different parameters that were tuned for the simulations:
 
 \begin{itemize}
 \setlength\itemsep{0em}
@@ -940,17 +940,17 @@ Below is the list of the different parameters that were tuned for the simulation
 \item \textit{branchingFactor} - 10
 \item \textit{electionConvergenceRounds} - 6
 \item \textit{electionConvergenceTest} - 0.8d
-\item \textit{Entry Pull Round} - 4000 (ms)
-\item \textit{Control Pull Round} - 3000 (ms)
+\item \textit{Entry Pull Round Timeout} - 4000 (ms)
+\item \textit{Control Pull Round Timeout} - 3000 (ms)
 \item \textit{maxEntryExchange} - 25 nodes/ pull
 \end{itemize}
 
-In addition to the above parameters, an important parameter is the minimum number of nodes that a particular node needs to locate above itself in terms of utility, to pull the control or the entry information. As part of the experiments, the value of the parameter is set to three. This condition is respected by each node unless they find the leader in their local view in which case they directly pull the information from the leader thereby implicitly trusting the information provided by it.
+In addition to the above parameters, an important parameter is the minimum number of nodes that a particular node needs to locate above itself in terms of utility, to pull the control or the entry information. As part of the experiments, the value of the parameter is set to \textit{three}. This condition is respected by each node unless they are able to locate the leader in their local view. In event of presence of leader in their view, the nodes implicitly trust the leader and  directly pull the information from it.
 
 
 \section{Convergence Experiment}
 
-The \textit{Convergence Experiment} helps to understand the rapidness with which the entry gets disseminated in the system. As part of this experiment, we booted up 250 nodes in simulation. Once the system was stabilized in terms of leader of the shard getting elected and the marker entry for the current epoch being published by the leader and disseminated to each node in the system, we then added a single entry to the leader and analyzed the time it took for the entry to be disseminated to all the nodes in the system. The results as shown in Figure \ref{fig:250conv} points out that it took 8 - 9 (sec) for all the nodes to get the entry. This time evaluates to roughly two pull rounds based on the value of the current pull round timeout.
+The \textit{Convergence Experiment} helps to understand the rapidness with which the entry gets disseminated in the system. As part of this experiment, we initially booted cluster with \textit{250 nodes} in simulation. Once the cluster was stabilized in terms of leader of the shard getting elected and the marker entry for the current epoch being published by the leader and disseminated to each node in the system, we then added a single entry to the leader and analyzed the time it took for the entry to be disseminated to all the nodes in the system. The results as shown in Figure \ref{fig:250conv} points out that it took 8 - 9 (sec) for all the nodes to get the entry. This time evaluates to roughly two pull rounds based on the value of the current pull round timeout.
 
 \begin{figure}[h]
 	\includegraphics[scale=0.5]{250Convergence}
@@ -959,7 +959,7 @@ The \textit{Convergence Experiment} helps to understand the rapidness with which
 \end{figure}
 
 
-Figure \ref{fig:500conv} shows the same experiment but now with 500 nodes in the simulation. The outcome is same as the previous one. The reason is because of the \textit{branchingFactor} parameter which is set to 10. Based on the parameters for the current simulation, the top 600 nodes in the system are expected to receive the information within two pull rounds. The results of the experiment conform with the expected outcome.
+Figure \ref{fig:500conv} shows the same experiment but now with \textit{500 nodes} in the simulation. The outcome is same as the previous one. The reason is because of the \textit{branchingFactor} parameter which is set to \textit{ten}. Based on the parameters for the current simulation, the top 600 nodes in the system are expected to receive the information within two pull rounds. The results of the experiment conform with the expected outcome.
 
 
 \begin{figure}
@@ -971,7 +971,22 @@ Figure \ref{fig:500conv} shows the same experiment but now with 500 nodes in the
 
 \section{Add Entry Throughput}
 
-In this experiment, we initially booted up 200 nodes in simulation. Once the gradient and the leader group became stabilized, initial batch of 20 entries were added in the system. We then started adding entries at varying rates likes \textit{1 entry per sec}, \textit{2 entries per sec} and  \textit{6 entries per sec} for a fixed period of time. As part of this experiment, we analyzed the fifty, seventy five and ninety nine percentile values i.e. number of nodes which at any given time during the operation of entry addition have fifty percent, seventy five percent and ninety nine percent of the total entries added in the system.
+As part of this experiment, we analyzed the response of the system under a constant rate of addition of entries. Based on the preference function, the nodes arrange themselves in such a way that the nodes with higher utility are concentrated towards the center of the system while nodes with lower utility arrange themselves on the outer regions of the system. Therefore, there is a gradient from the center to the outer edges of the system in terms of decreasing utility. In this experiment, we will be measuring the maximum lag in terms of entry difference between a particular node and the nodes in the follower group which ideally should have the maximum entries as the leader replicates the decision to commit a new entry over the follower group before adding the entry itself. The entry lag increases as we move towards the nodes in the outermost region in the system and therefore we would like to measure the maximum lag in fifty, seventy five and ninety percentile regions.
+
+\par We initially setup a cluster of 200 nodes in simulation. Once the system was stabilized, we added an initial batch of \textit{20 entries}. We then started adding entries at a constant rate for a fixed period of time. The experiment was performed  with the following variations:
+
+
+\begin{enumerate}
+
+\item : We added the entries at rate of \textit{1 Entry per second} for \textit{60 seconds}. The 
+
+\end{enumerate}
+
+As part of this experiment, we tested the response of the system under constant rate of addition of entries. We initially setup a cluster of 200 nodes in simulation. Once the system was stabilized, we added an initial batch of \textit{20 entries}. We then started adding entries at a constant rate for a fixed period of time. 
+
+
+
+In this experiment, we initially setup a cluster with 200 nodes in simulation. Once the gradient and the leader group became stabilized, initial batch of \textit{20 entries} was added in the system. We then started adding entries at varying rates likes \textit{1 entry per sec}, \textit{2 entries per sec} and  \textit{6 entries per sec} for a fixed period of time. As part of this experiment, we analyzed the fifty, seventy five and ninety nine percentile values i.e. number of nodes which at any given time during the operation of entry addition have fifty percent, seventy five percent and ninety nine percent of the total entries added in the system.
 
 \par The Figure \ref{fig:addEntry1} depicts the outcome in case of \textit{1 entry per sec}. As we can see the fifty percentile metrics seems stable as in all the nodes during the entry addition phase have atleast fifty percent or more of the entries. In case of seventy five percentile, it depicts a seesaw like structure. This behavior of the system initially looks strange but a closer look at the interaction of the application with the overlay over which the system is built can help to understand this behavior. As mentioned earlier, a node in order to perform a control pull needs to have atleast three nodes above himself in terms of utility. The node then matches the responses and incorporate the common in order responses in their local \textit{timeline}. As node mainly fetches the leader unit updates through the control pull, the entry pull mechanism takes this updated information about the number of entries in the system, requests for the next entries from the nodes above it. The mechanism of matching the responses is same as in case of control pull protocol.
 
@@ -992,11 +1007,11 @@ In this experiment, we initially booted up 200 nodes in simulation. Once the gra
 \end{figure}
 
 \section{Churn Experiment}
-
-As part of this experiment, we initially started the system with 200 nodes and loaded the cluster with 100 entries. We started with the addition and the simultaneous removal \textit{4 Nodes per sec} to and from the system respectively. We continued this behavior for \textit{60 Seconds} thus resulting in a churn of \textit{four percent}. Nodes from the system except the nodes from the leader group were selected randomly to be removed by crashing and then stopping the nodes. New nodes were booted up with different node identifiers and added to the system. In addition to this, a constant rate of \textit{1 entry per sec} was employed for the entry addition. Figure \ref{fig:churn} depicts the fifty, seventy five and the ninety percentile values. As we can see more than fifty percent of the nodes had fifty and seventy percent of the entries at all times during the experiment. Only the leader group nodes seemed to be in the category of nodes having ninety nine percent of the entries at all times.
+\label{sec:churn}
+As part of this experiment, we initialized the cluster with 200 nodes and added \textit{100 entries} once the system was stabilized. We then, initiated the churn process in the system for a fixed period of time during which we added and simultaneously removed four nodes per sec to and from the system respectively. Each node in the system except from the leader and the nodes in the follower group had an equal chance to be selected for the removal from the system. The process of removal involved shutting down the node and stopping all of its communication with other nodes. Once a node is removed, it is not allowed to join back in the system. The nodes added as part of churn process joined the system with a unique identifier. In addition to this, during the churn process, a constant rate of \textit{ One entry per sec} was employed for the entry addition. As part of the experiment, we tried to identify the maximum lag in the number of entries at different regions from center of the gradient. In ideal scenario, the lag at the center of the system i.e at the leader and its follower group is \textit{zero}. When we move away from the center of the gradient, the lag starts to increase as the nodes now need to identify and pull the latest information from the nodes above themselves. We tried to analyze the maximum lag in regions that are fifty percent, seventy five percent and ninety percent of the whole system, away from the center of the system. The results indicating the lag are shown in figure \ref{fig:churn}. The maximum lag as expected is in the outermost ring which is ninety percent away from the center of the system as the new nodes that are being added are present in that region due to very low utility. The fifty percent region remains stable, as the nodes nearby the center are able to quickly pull the updates and even though the nodes are being removed, the nodes from the outer regions move towards the inner regions eventually and fill the places of the crashed nodes. The system quickly recovers when the churn stops and lag eventually drops to \textit{zero}.
 
 \begin{figure}[h]
-	\includegraphics[scale=0.5]{200-4Node-1Entry}
+	\includegraphics[scale=0.20]{Churn200-4Node-1Entry}
 	\caption{Churn 4 nodes/sec and 1 entry/sec}
 	\label{fig:churn}
 \end{figure}
@@ -1016,6 +1031,18 @@ As part of this experiment we started with 200 nodes in the system and loaded th
 	\includegraphics[scale=0.5]{200-80Nodes}
 	\caption{FlashCrowd 80 nodes/Sec }
 	\label{fig:flash80}
+\end{figure}
+
+
+
+\section{Flash Crowd and Churn Experiment}
+
+In all of the above experiments, the system is analyzed using a single scenario but in this experiment, we will be testing the system on multiple scenarios simultaneously. The cluster of nodes is initialized with \textit{100 entries}. Once the system becomes stable, we initiate a flashcrowd of \textit{40 nodes}. The initial spike as shown in Figure \ref{fig:flashChurn} depicts the sudden increase in the entry lag in the outermost ring in the system. Once the lag subsides, we initiate churn process similar to the one described in section  \ref{sec:churn}. In addition to this, we simultaneously initiate another flashcrowd by injecting \textit{20 nodes} in the system. Before the lag caused by these fresh nodes subsides, we initiate a final flashcrowd of \textit{20 nodes}. This effects of these events could be viewed in the series of sudden increase in the maximum lag in the seventy percentile region in the system. Even though the same pattern of increase in maximum lag is depicted in the fifty percentile region but the increase in the maximum lag is significantly less than in the outer regions indicating a higher stability in this region. 
+
+\begin{figure}[h]
+	\includegraphics[scale=0.20]{Churn200-40Nodes-1-40-20-20}
+	\caption{Churn and FlashCrowd}
+	\label{fig:flashChurn}
 \end{figure}
 
 
