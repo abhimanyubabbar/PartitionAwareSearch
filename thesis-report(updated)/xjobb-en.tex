@@ -978,32 +978,29 @@ As part of this experiment, we analyzed the response of the system under a const
 
 \begin{enumerate}
 
-\item : We added the entries at rate of \textit{1 Entry per second} for \textit{60 seconds}. The 
+\item We added the entries at rate of \textit{2 entries per second} for a duration of  \textit{100 seconds}. Figure \ref{fig:addEntry2} represents the maximum entry lag in different regions in the system.
+
+\item As part of this variation, we increased the throughput to \textit{4 entries per second} keeping the duration same as before. Figure \ref{fig:addEntry4} represents the response of system to this variation.
 
 \end{enumerate}
 
-As part of this experiment, we tested the response of the system under constant rate of addition of entries. We initially setup a cluster of 200 nodes in simulation. Once the system was stabilized, we added an initial batch of \textit{20 entries}. We then started adding entries at a constant rate for a fixed period of time. 
 
+The difference in the maximum lags in various regions for at different intervals is small which is mainly due to the lag occurring because of the interval between the pull rounds. As per the simulation, the nodes every \textit{three seconds} initiate the control pull protocol to identify the information added in the system and then initiate the actual entry pull mechanism to fetch the information. In addition to this, each node maintains fingers to the nodes which have a rank approximately half than its own and to which the request for the control information is made. In this way, the information trickles in the system. As the number of nodes in the system would increase the gaps between the regions would also increase as it would take longer for the information to disseminate. 
 
-
-In this experiment, we initially setup a cluster with 200 nodes in simulation. Once the gradient and the leader group became stabilized, initial batch of \textit{20 entries} was added in the system. We then started adding entries at varying rates likes \textit{1 entry per sec}, \textit{2 entries per sec} and  \textit{6 entries per sec} for a fixed period of time. As part of this experiment, we analyzed the fifty, seventy five and ninety nine percentile values i.e. number of nodes which at any given time during the operation of entry addition have fifty percent, seventy five percent and ninety nine percent of the total entries added in the system.
-
-\par The Figure \ref{fig:addEntry1} depicts the outcome in case of \textit{1 entry per sec}. As we can see the fifty percentile metrics seems stable as in all the nodes during the entry addition phase have atleast fifty percent or more of the entries. In case of seventy five percentile, it depicts a seesaw like structure. This behavior of the system initially looks strange but a closer look at the interaction of the application with the overlay over which the system is built can help to understand this behavior. As mentioned earlier, a node in order to perform a control pull needs to have atleast three nodes above himself in terms of utility. The node then matches the responses and incorporate the common in order responses in their local \textit{timeline}. As node mainly fetches the leader unit updates through the control pull, the entry pull mechanism takes this updated information about the number of entries in the system, requests for the next entries from the nodes above it. The mechanism of matching the responses is same as in case of control pull protocol.
+\par Even though the difference in the maximum lags in various regions at different intervals have a small gap but a general pattern of series of spikes and troughs can be clearly seen in Figures \ref{fig:addEntry2} and \ref{fig:addEntry4}. The reason can be attributed to the time taken for an updated utility of a node to be disseminated in the system through gradient shuffles. As mentioned earlier, each node shuffles its own utility with other nodes in the system with \textit{zero} age. Based on the age, other nodes replace the old sample having a higher age with lower age sample but during the event of change in utility the local view of a node becomes stale till it is able to shuffle and get the updated utility of its neighboring nodes. In addition to this, each node is also replicating the decisions taken by the leader by pulling the information and improving its own utility. Therefore when a node tries to identify better nodes to pull information from, it is very likely possible that because of its stale view it cannot identify required number of nodes to pull the information from and therefore times out without pulling any information.  Due to this, the lag in the system starts growing for a while resulting in a spike. After few rounds of shuffling, it is able to update its local view with fresh samples and initiate the pull protocol thereby reducing the lag between the core and self. Therefore, we see a series of spikes and trough during the experiment.
 
 \begin{figure}[h]
-	\includegraphics[scale=0.5]{200-1EntryPerSec}
-	\caption{Add-Entry 1 entry(s)/Sec}
-	\label{fig:addEntry1}
+	\includegraphics[scale=0.2]{Add200-2EntryPerSec}
+	\caption{Add-Entry 2 entry(s)/Sec}
+	\label{fig:addEntry2}
 \end{figure}
 
-\par The node then incorporates the entries by adding them to the Lucene Store and augmenting the utility accordingly. The application then informs the other components about its updated utility which allows them to make informed decisions. The overlay network contains a view of subset of total nodes in the system based on the preference function. With a sudden increase in the utility the local view of the gradient becomes obsolete and therefore the number higher samples return by the gradient to the application diminishes. In case a node unable to find desired number of higher utility nodes for the control pull simply it times out and wait for the next round to start. It is because of the obsolete view of the system in the gradient, the node doesn't initiate the control pull. In absence of the updated information about the entries in the system, the entry pull mechanism is unable to pull the next entries which are getting added to the leader and being replicated on the leader group nodes. Therefore the nodes in range of seventy percentile drops. Once the local view gets refreshed due to continuous shuffling and nodes injecting updated utilities in the system, the nodes are again able to find other nodes above themselves and start pulling the control information again resulting in the new entries being pulled.
 
-\par Figure \ref{fig:addEntry6} depicts the performance of the system in event of addition of \textit{6 entries per sec}. The seesaw like structure can now be observed both in the fifty and seventy-five percentile. The reason being same as mentioned above. As the nodes near to the center of the gradient waits for the gradient to stabilize to get updated information, the nodes farther away near to the edges of the gradient are also unable to get the updated information. Therefore they also start lagging in terms of catching up to the leader group with has the latest information in terms of entries being added in the system. Apart from this, as observed from the diagrams the ninety percentile is really low in range of \textit{1-3\%}. The reason for this is because of the entries present in the system. As the entries that are added are usually low in addition to the initial entries, even a difference of one entry will remove a particular node from the ninety percentile. Therefore only the leader group nodes to which the leader replicates the entry being added are present in this range.
 
 \begin{figure}[h]
-	\includegraphics[scale=0.5]{200-6EntryPerSec}
-	\caption{Add-Entry 6 entries/Sec}
-	\label{fig:addEntry6}
+	\includegraphics[scale=0.2]{Add200-4EntryPerSec}
+	\caption{Add-Entry 4 entry(s)/Sec}
+	\label{fig:addEntry4}
 \end{figure}
 
 \section{Churn Experiment}
