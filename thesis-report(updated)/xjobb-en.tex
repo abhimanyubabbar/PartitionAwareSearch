@@ -508,9 +508,7 @@ The behavior of the leader is depicted in Algorithm \ref{leader}. The leader mod
 \end{itemize}
 
 Once the conditions are met, the node initiates the voting process as part of leader election protocol. It selects topK nodes which will be part of  its follower group and sends them a promise request meaning that they accept the node as their leader. It then waits for their responses. Rejection from any node means that there might be a node which is better than the leader which has not yet been discovered by the leader itself. The leader then cancels the current election round and wait for the conditions to be met again before initiating the protocol.
-On the other hand, if the leader receives promises from all the nodes in its follower group, it informs the follower group about it being elected as leader which results in nodes starting a lease for the current leader.  Before the expiry of the lease, the leader again checks if the conditions for itself to become a leader are met and in case the conditions hold, it informs its follower group about extension of the lease. The follower group at this point might not be the same as in previous round. The node recalculates the topK nodes before extending the lease and send them the extension request. In case the lease is not extended it expires and the node resets the leader group membership check.
-
-It might also be possible that at the time of extension, the leader might discover a node which is better than the leader itself and in order to promote fairness in the system, the leader will not extend its lease anymore and allow the new node with better utility to impose itself as the new leader.
+On the other hand, if the leader receives promises from all the nodes in its follower group, it informs the follower group about it being elected as leader.
 
 
 \subsection{Follower Behavior}
@@ -529,6 +527,11 @@ In case the above conditions hold, the node sends an acknowledgement in regard t
 
 \subsection{Lease Extension}
 
+A node on becoming a leader informs its follower group about the update. At this point the leader and the nodes in the follower group initiates a lease. The lease is being used to promote fairness in terms of node with highest utility should eventually be the leader of shard in the system. As nodes join and leave the system, it might be possible that a node better than the current leader of the shard emerges in the system. Therefore, the leader is elected for a single lease. 
+
+\par At end of the lease, the leader checks its local view to discover nodes that might be better than itself. In order to do so, it locally switches off the \textit{leaderGroupMembership} check and compares its utility with that of its local view. In case a leader is unable to local a better node than itself, it recalculates its follower based on the current \textit{topK} nodes and sends them a lease extension request. On the other hand, if a better node is found, the leader does not extend its lease and allows the other node with a better utility to assert itself as a new leader.
+
+\par The nodes on becoming a part of follower group also initiates a lease at their end. In case a node doesn't receive an extension request from current leader, it simply switches off the \textit{leaderGroupMembership} check in its utility. On the other hand, on receiving extension request from the leader, it simply renews its current lease.
 
 
 \subsection{Multiple Leaders}
@@ -680,7 +683,7 @@ Once the leader gets elected the information about the new leader is initially p
 
 
 
-\subsection{Preference and Utility Function}
+\section{Preference and Utility Function}
 \label{ssec:utility}
 
 Gradient Topology is a class of P2P topology which helps in constructing the overlay of the system in such a way that the nodes with higher utility are concentrated at the center and the nodes with low utility are present on the edges of the system. The topology makes use of the utility function which is a system based function used to achieve total order on the nodes. As per the current system, the utility function is composed of four scalars:
@@ -721,7 +724,7 @@ The total order achieved on the nodes using the utility function is used to assi
 \par The gradient topology constructs and maintains the overlay by forming links with a set a preferred nodes in the system. The gradient also selects a node from this set and exchange information regarding the change in the self utility and neighbors periodically. In order to decide the set of preferred nodes, gradient uses a \textit{Preference Function} which itself is based on the utility function. In the prototype developed as part of thesis, the preference function indicates that a node will have a higher preference to form link with the node having a utility higher but closer to a node's own utility. In case a node is unable to find nodes above itself in terms of utility it will form links with node that have a utility which is lower than self but closer to self. In order to better explain the statement, we assume that we have three peers having identifiers as A, B and C. Assuming the utility of a peer could be represented on an absolute scale as depicted in Figure \ref{fig:preference}, we can see that PeerB has the highest utility  followed by PeerA and then by PeerC. The preference function indicates that PeerC will have a higher probability of forming link with PeerA than with PeerB as even though both have utility greater than its own, PeerA has utility which is closer to utility of PeerC. \textit{Softmax} approach is being used with a \textit{low temperature} to identify the nodes that will be part of the neighborhood list resulting a greedy approach while creating the local view. Apart from this, gradient also uses the  preference function while selecting a node from the neighbor list to shuffle with from the local view. At this stage, the softmax approach with a \textit{higher temperature} is used to increase the range over which the node is selected for shuffling.
 
 
-\subsection{Pull Protocol}
+\section{Pull Protocol}
 
 The whole system is managed by a small number of peers which are the leaders of different shards in the system. The protocol employed for election of leader is \textit{Leader Selection} which is explained in detail in section \ref{ssec:leaderElection}. The leader is responsible for taking decisions regarding addition or updation of entries in the shard. In order to make the system highly available and prevent a single point of failure, the leader replicates the decision over the follower group. Once the decision has been replicated to the follower group, the leader returns back a successful response to the client which initiated the operation. This decision needs to be disseminated to other nodes in the shard which can be achieved by either using a push protocol in which nodes send information to their neighbors or through a pull protocol, which is periodically executed by each node and asks for any updates from the nodes having higher utility. The push protocol seems lucrative because the nodes will push information to other nodes only when a new information gets available to them. It prevents the nodes from periodically requesting for any new information from the neighboring nodes and thus saving bandwidth. But there are major flaws in the push information scheme which are enumerated below:
 
@@ -738,20 +741,20 @@ The whole system is managed by a small number of peers which are the leaders of 
 
 Therefore, when the information needs to be disseminated in whole of the system, a pull protocol is employed whereby every node periodically requests for the next decisions that are taken by the leader and not yet seen by the requesting node. Apart from this, the system involves the use of push protocol by the leader when the decision needs to be replicated to the follower group. The information gets pushed by the leader to the nodes in the follower group which gets pulled by the rest of the nodes in the system using a pull protocol. Even though we have briefly talked about information dissemination in this section, it is explained in detail in Section \ref{ssec:gossip}.
 
-\subsection{Gossip Based Data Dissemination}
+\section{Gossip Based Data Dissemination}
 \label{ssec:gossip}
 Once a node becomes a leader, it is implicitly trusted by other members in the shard. Initially the information of a node becoming a leader is only published to the follower group which is chosen by the leader. This information then gets pulled by other peers in the system. In this situation, it might be very much possible that a Byzantine Node might start publishing wrong information to the peers during the pull protocol. In order to prevent this, a peer during the pull protocol, requests updates from a predefined configurable peers usually \textit{three} that are above itself in terms of utility.  The peers respond with the hashes of the information. Only the information for which the hashes match from all the nodes is then pulled from any one of the responding peers.
 \par This approach is being used for securely disseminating the leader information in the system. In addition to this, entry dissemination is also based on this protocol. We think that this approach is secure enough in the sense that it is highly unlikely for all the nodes that are requested by peer to provide updates that are faulty.
 
 
-\subsection{Load Balancing}
+\section{Load Balancing}
 \label{ssec:loadBalance}
 As the system evolves, the leader receives request for adding new entries in the system. Using basic replication strategies, the leader commits the entries to the leader group which then gets replicated to all the nodes in the shard using pull protocol. The system has a predefined \textit{MaxShardSize} parameter. When the entries grow beyond the count, the leader then initiates \textit{ShardSplit} protocol. As part of this protocol, each peer based on its identifier and its depth which is basically number of shard splits seen by the node, decides the next shard id.
 \par Before initiating the two phase commit of the shard split, the leader stops handling the entry additions. It then looks in its local lucene store and after sorting the entries based on their identifiers, calculates the split point. This meta information is then committed to the leader group nodes along with the shard split update as a part of two phase commit. Once the information is pulled by other peers in the system, based on their new shardId, they decide to remove all the entries either before or after the split point. The process of removing the entries in more detail when we introduce the concept of Leader Units and Timeline in section \ref{ssec:leaderUnit} and \ref{ssec:timeline} respectively. The peers then join the other peers in their respective shards.
 
 
 
-\subsection{Routing}
+\section{Routing}
 \label{ssec:routing}
 
 \par The client in order to look for the entries in the system generates a search request. The search request is then sent to the application running at the client node. The protocol of handling search request by the application involves locating the items matching the search request in the local data store. Once the matching items are located, necessary information is extracted from the items and response is generated to be sent back to the client.
