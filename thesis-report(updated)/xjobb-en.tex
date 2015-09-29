@@ -341,6 +341,13 @@ In this section, we will be providing a brief introduction about Git and the str
 Eric Brewer in the year 2000 put forward his opinion that in a distributed system we cannot simultaneously provide \textit{Consistency}, \textit{Availability} and \textit{Partition Tolerance}. A distributed system that spans over thousands of machine usually see switches failing and communication between the nodes being interrupted. Therefore a set of nodes in the whole system becomes unreachable resulting in network partition. In order for the system to be partition tolerant, the application needs to decide based on the requirements to either provide \textit{Consistency} in sense that allow all user to read the previous written writes or focus on \textit{Availability} by providing the read and write capability in the system even in the event of network partitioning.
 
 
+\section{Large Fanout}
+
+In this section, we will be discussing the concept of \textit{latency variability} in large scale distributed systems. The term latency variability means the distribution of latency during an operation over the network. The importance of latency variability has increased in recent times due to the requirement for real time responsiveness of applications. Google quickly discovered that simply scaling the system doesn't necessarily means better performance regarding the response times of search requests \cite{tamingTail}. Normally the responses for the requests handled by a particular server are within the limits of respectable response times but once in a while the response time for a request would be much higher. This may be attributed to the network being slow due to choke or system disk from which the data is supposed to be read is acting slow. This phenomenon is known as long tail which has also been observed in trading systems where we might find the latencies of few trades in order of 900ms compared to normal latency of 5ms.
+
+\par We might argue that the occurrence of the phenomenon is not often enough to cause alarm but as the scale of the system keeps on growing as in case of Google where the data is divided into multiple shards, the search request needs to be fanned out to a larger audience and therefore the probability of occurrence of long tail increases as the requesting node needs to wait for responses from all the shards. This leads to unacceptable response times occurring with higher probability. Google uses a lot of innovative approaches to solve issue of latency variability as mentioned by Jeffery Dean in this talk \cite{jeffDean}. 
+
+
 \chapter{Related Work}
 \label{chap:related_work}
 
@@ -744,13 +751,6 @@ As the system evolves, the leader receives request for adding new entries in the
 \par The above approach allows application to locate all the matching items in case all the data is located in the local data store. As part of load balancing protocol which explained in Section \ref{ssec:loadBalance}, the data gets distributed between the nodes in different shards. Now, it might be possible that the item that the client is looking for is located in other shards. Therefore, the application now needs to route the request to the nodes present in these shards. In order to do so, the application needs to have information about the shards and sample of nodes located in each shard. Therefore, each peer has a \textit{Routing} abstraction which keeps track of the shards in the system and sample of nodes inside each shard. The component periodically gets random set of samples from the peer sampling service. Each node sample contains information regarding the shard to which it belongs. Using this information, the component maps the node descriptor to the shard. Now, when the application receives a search request, it gets information about all the shards and a set of descriptors in each shard from its local map. The query is then sent in parallel to all the shards.
 
 
-\subsection{Large Fanout}
-
-In this section, we will be discussing the concept of \textit{latency variability} in large scale distributed systems. The term latency variability means the distribution of latency during an operation over the network. The importance of latency variability has increased in recent times due to the requirement for real time responsiveness of applications. Google quickly discovered that simply scaling the system doesn't necessarily means better performance regarding the response times of search requests \cite{tamingTail}. Normally the requests handled by a particular server are within the limits of respectable response times but once in a while the response time for a request would be much higher. This may be attributed to the network being slow due to choke or system disk from which the data is supposed to be read is acting slow. This phenomenon is known as long tail which has also been observed in trading systems where we might find the latencies of few trades in order of 900ms compared to normal latency of 5ms.
-
-\par We might argue that the occurrence of the phenomenon is not often enough to cause alarm but as the scale of the system keeps on growing as in case of Google where the data is divided into multiple shards, the search request needs to be fanned out to a larger audience and therefore the probability of occurrence of long tail increases as the requesting node needs to wait for responses from all the shards. This leads to unacceptable response times occurring with higher probability.
-
-\par Google uses a lot of innovative approaches to solve issue of latency variability as mentioned by Jeffery Dean in this talk \cite{jeffDean}. The approach that we are interested and have adapted for our prototype involves instead of sending to a single node in every shard the search request, we send it to a configurable number of nodes in that shard. We simply wait for the first response from that shard and discard the rest. The purpose behind it is to reduce the dependency on the slow performing node by replicating the request to other nodes within the same shard. Once, all the shards have responded or search request timed out, we collect, filter and augment the results with additional metadata. This data is then returned to the client. In this way the system makes significant steps towards preventing long tail in the search request response times.
 
 
 \chapter{Implementation}
@@ -888,6 +888,16 @@ In section \ref{ssec:entryIdStructure} we introduced the concept of the dense id
 
 
 \newpage As we can clearly see from the Figure \ref{fig:timelineMerge}, a simple merge creates an issue of the \textit{split point leader unit}. When the networks split, the nodes in one of the partitions assumed the current leader to be dead and started their own election protocols while the leader being alive in other partition continued with its operation. This can be seen from the differences in the leader units having the \textit{same epoch} and the \textit{leader identifier}  but \textit{different entries} added in the system by the leader. When the partitions merge then the leader of the merged partitions needs to identify the presence of this case and needs to indicate the other nodes in the system to reopen the leader unit and fetch the remaining entries. The nodes which went into other partition than the leader at that time will recognize the difference in the entries and start pulling the remaining entries to become up to date.
+
+
+\subsection{Request Fanout}
+
+Earlier we introduced the concept of latency variability in large scale distributed systems and how it might be result in large response times. In the prototype developed, we analyzed different approaches for reducing the latency variability but
+approach that we are interested and have adapted for our prototype involves sending the search request to multiple nodes within shard. We the application receives a search request from the client, the application locates the information regarding the nodes in the shard using the \textit{Routing} layer. We send the request to a configurable number of nodes within each shard and start a timer. We wait for the first response from that shard and discard the rest. The purpose behind it is to reduce the dependency on the slow performing node by replicating the request to other nodes within the same shard. Once, all the shards have responded or search request timed out, we collect, filter and augment the results with additional metadata. This data is then returned to the client. In this way the system makes significant steps towards preventing long tail in the search request response times.
+
+
+
+
 
 
 \chapter{Evaluations}
