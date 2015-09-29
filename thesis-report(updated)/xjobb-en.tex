@@ -700,7 +700,7 @@ Once the leader gets elected the information about the new leader is initially p
 \section{Load Balancing}
 \label{ssec:loadBalance}
 
-As the system evolves, the leader receives request for adding new entries in the system. Using basic replication strategies, the leader commits the entries to the follower group which then gets replicated to all the nodes in the shard using a generic pull protocol explained later in Section\ref{sec:pull}. Each node in the system has an upper bound on the the search index also known as \textit{MaxShardSize}. When the number of entries grow beyond that size, the leader of the shard initiates the \textit{ShardSplit} protocol to balance the load. As part of protocol, each peer based on its identifier and the depth which represent number of shard splits seen by the node decides the identifier of the new partition that the node will join after the split protocol. The nodes belonging to the same partition identifier forms their separate structured overlay. 
+As the system evolves, the leader receives request for adding new entries in the system. Using basic replication strategies, the leader commits the entries to the follower group which then gets replicated to all the nodes in the shard using a generic pull protocol explained later in Section \ref{sec:pull}. Each node in the system has an upper bound on the the search index also known as \textit{MaxShardSize}. When the number of entries grow beyond that size, the leader of the shard initiates the \textit{ShardSplit} protocol to balance the load. As part of protocol, each peer based on its identifier and the depth which represent number of shard splits seen by the node decides the identifier of the new partition that the node will join after the split protocol. The nodes belonging to the same partition identifier forms their separate structured overlay. 
 
 \par The leader commits the sharding update over the nodes in the follower group which gets pulled to each node. On receiving the sharding update each node applies the protocol for load balance as defined by the application and calculates its new partition identifier and join the overlay.
 
@@ -761,7 +761,7 @@ As mentioned earlier, at any given moment in data center the router, network con
 
 
 \section{Preference and Utility Function}
-\label{ssec:utility}
+\label{sec:utility}
 
 Gradient Topology is a class of P2P topology which helps in constructing the overlay of the system in such a way that the nodes with higher utility are concentrated at the center and the nodes with low utility are present on the edges of the system. The topology makes use of the utility function which is a system based function used to achieve total order on the nodes. As per the current system, the utility function is composed of four scalars:
 
@@ -789,7 +789,7 @@ The parameters contained in the utility function are used to provide score to ea
 \end{itemize}
 
 
-The total order achieved on the nodes using the utility function is used to assign ranks to the nodes with the leader with the highest utility being assigned a rank 0. Therefore, in a system with N nodes, N ranks are being assigned. The main reason behind assigning ranks is the creation of fingers which are long range links used as paths for faster dissemination of data. A node with rank R will try to create fingers i.e. links with nodes with ranks near to value ( R / 2 ). Once these links are created, node periodically gossips with the long range links to refresh the links in case the nodes behind the fingers have crashed. As there is no centralized control in the system, the mechanism to estimate self rank is based on the ranks of the neighbors of a particular node. Initially each node starts with self rank as $ \infty $. In case a node is unable to find any node above itself in terms of utility, it resets its rank as \textit{zero}. Each node then identifies the minimum rank among the neighbors [R1 .. RS] of size S, it then calculates its own rank by MinRank(R1, R2, ... RS) + diff  where \textit{diff} is number of neighbors who are better than the node in terms of utility. As the neighbors keep on changing due to churn and updation of self utility, so does the rank keep of changing. Ideally, the node with rank zero initiates the voting protocol.
+
 
 \begin{figure}[h]
 	\centering
@@ -836,10 +836,6 @@ Once a node becomes a leader, it is implicitly trusted by other members in the s
 \par This approach is being used for securely disseminating the leader information in the system. In addition to this, entry dissemination is also based on this protocol. We think that this approach is secure enough in the sense that it is highly unlikely for all the nodes that are requested by peer to provide updates that are faulty.
 
 
-\section{Load Balancing}
-\label{ssec:loadBalance}
-As the system evolves, the leader receives request for adding new entries in the system. Using basic replication strategies, the leader commits the entries to the leader group which then gets replicated to all the nodes in the shard using pull protocol. The system has a predefined \textit{MaxShardSize} parameter. When the entries grow beyond the count, the leader then initiates \textit{ShardSplit} protocol. As part of this protocol, each peer based on its identifier and its depth which is basically number of shard splits seen by the node, decides the next shard id.
-\par Before initiating the two phase commit of the shard split, the leader stops handling the entry additions. It then looks in its local lucene store and after sorting the entries based on their identifiers, calculates the split point. This meta information is then committed to the leader group nodes along with the shard split update as a part of two phase commit. Once the information is pulled by other peers in the system, based on their new shardId, they decide to remove all the entries either before or after the split point. The process of removing the entries in more detail when we introduce the concept of Leader Units and Timeline in section \ref{ssec:leaderUnit} and \ref{ssec:timeline} respectively. The peers then join the other peers in their respective shards.
 
 
 
@@ -889,10 +885,19 @@ As part of current implementation, the prototype supports the following operatio
 \end{itemize}
 
 
+\section{Load Balancing}
+\label{sec:loadBalance}
 
-\section{Load Balance}
+As the system evolves, the leader receives request for adding new entries in the system. Using basic replication strategies, the leader commits the entries to the leader group which then gets replicated to all the nodes in the shard using pull protocol. The system has a predefined \textit{MaxShardSize} parameter. When the entries grow beyond the count, the leader then initiates \textit{ShardSplit} protocol. As part of this protocol, each peer based on its identifier and its depth which is basically number of shard splits seen by the node, decides the next shard id.
+\par Before initiating the two phase commit of the shard split, the leader stops handling the entry additions. It then looks in its local lucene store and after sorting the entries based on their identifiers, calculates the split point. This meta information is then committed to the leader group nodes along with the shard split update as a part of two phase commit. Once the information is pulled by other peers in the system, based on their new shardId, they decide to remove all the entries either before or after the split point. The process of removing the entries in more detail when we introduce the concept of Leader Units and Timeline in section \ref{ssec:leaderUnit} and \ref{ssec:timeline} respectively. The peers then join the other peers in their respective shards.
+
+
+
+
 
 \section{T-Gradient}
+
+The utility function described in Section \ref{sec:utility} is designed in a way to achieve total order on the nodes in the system. The total order achieved on the nodes is turn used to assign ranks to the nodes with the leader with the highest utility being assigned a rank \textit{zero}. Therefore, in a system with N nodes, N ranks are being assigned. The main reason behind assigning ranks is the creation of fingers which are long range links used as paths for faster dissemination of data. A node with rank R will try to create fingers i.e. links with nodes with ranks near to value ( R / 2 ). Once these links are created, node periodically gossips with the long range links to refresh the links in case the nodes behind the fingers have crashed. As there is no centralized control in the system, the mechanism to estimate self rank is based on the ranks of the neighbors of a particular node. Initially each node starts with self rank as $ \infty $. In case a node is unable to find any node above itself in terms of utility, it resets its rank as \textit{zero}. Each node then identifies the minimum rank among the neighbors [R1 .. RS] of size S, it then calculates its own rank by MinRank(R1, R2, ... RS) + diff  where \textit{diff} is number of neighbors who are better than the node in terms of utility. As the neighbors keep on changing due to churn and updation of self utility, so does the rank keep of changing. Ideally, the node with rank zero initiates the voting protocol.
 
 
 \section{System Data Structures}
