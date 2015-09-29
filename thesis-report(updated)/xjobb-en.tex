@@ -705,7 +705,8 @@ As the system evolves, the leader receives request for adding new entries in the
 \par The leader commits the sharding update over the nodes in the follower group which gets pulled to each node. On receiving the sharding update each node applies the protocol for load balance as defined by the application and calculates its new partition identifier and join the overlay.
 
 \section{System Data Structure}
-In this section, we will describing design of different data structures used in the system along with motivation behind that design :
+
+In large scale distributed systems, \textit{availability} is achieved through data replication while the \textit{consistency} is achieved using Eventual Consistency strategies. The updates to an object are committed on a single node and then executed in the background on other nodes containing the replica of the object. This makes the system vulnerable to conflicts arising out of concurrent operations on different nodes which needs to be manually resolved or rollback of the updates needs to be performed. Marc Shapiro et al formally introduced the concept of \textit{Conflict Free Replication Data Types} \cite{crdt} \cite{crdtConcurrencyWithoutControl} which  enables the concurrent updates which commute to be executed on the replicas of an object on different nodes which can eventually be resolved locally without consensus. In addition to this, the author introduced the concept of \textit{Dense Identifier Spaces} required to identify the commutative concurrent operations \cite{crdtConcurrencyWithoutControl}. In this section, we will describing design of different data structures used in the system which takes motivation from these \textit{dense identifier spaces}:
 
 \subsection{Timeline}
 
@@ -713,16 +714,39 @@ As the system is dynamic, nodes can join and leave the system whenever they want
 
 \subsection{Epoch}
 
-In order to achieve monotonicity in the system, we introduce the concept of Epochs. Epoch is simply a counter which gets incremented every time a new leader gets elected in the system. The nodes can easily identify the entries with the highest epoch in the local data store and request for entries with the successive epochs. 
+In order to achieve \textit{monotonicity} in the system, we introduce the concept of Epochs. Epoch is simply a counter which gets incremented every time a new leader gets elected in the system. The nodes can easily identify the entries with the highest epoch in their local data store and request for entries with the successive epochs. 
 
 \subsection{LeaderUnit}
-In addition to epoch, the nodes needs to have information about the entries added in that particular epoch by the leader to identify the stage at which it would request the entries with the next epoch. This meta information about the number of entries added by a leader in a particular epoch is termed as \textit{Leader Unit}. The structure of the leader unit is presented as below:
+In addition to epoch, the nodes needs to have information about the entries added in that particular epoch by the leader to identify the stage at which it would request the entries from the next epoch. This meta information about the number of entries added by a leader in a particular epoch is termed as \textit{Leader Unit}. The structure of the leader unit is presented as below:
 
 \begin{tcolorbox}
 \textbf{Leader Unit Structure:} \textless Epoch, LeaderId, NumEntries, State \textgreater
 \end{tcolorbox}
 
-The \textit{EpochId} represents the epoch under which the leader takes decisions in the system. The \textit{LeaderId} identifies the leader of the shard during that particular epoch. The \textit{NumEntries} part of the structure identifies the number of entries added by a particular leader. Lastly, \textit{State} represents whether the leader unit is currently \textit{Open or Closed}. In case the leader is alive and taking decisions in the system, the state of the leader unit is \textit{Open}. In case the leader has crashed or backed off for a new leader to emerge, node no longer will be taking decisions as part of this epoch and the unit is \textit{Closed}.
+The \textit{EpochId} represents the epoch under which the leader takes decisions in the system. The \textit{LeaderId} identifies the leader of the shard during that particular epoch. The \textit{NumEntries} part of the structure identifies the number of entries added by a particular leader. Lastly, \textit{State} represents whether the leader unit is currently \textit{Open or Closed}. In case the leader is alive and taking decisions in the system, the state of the leader unit is \textit{Open}. In case the leader has crashed or backed off for a new leader to emerge, leader will no longer will be taking decisions as part of this epoch and the unit is \textit{Closed}.
+
+
+\subsection{Entry Identifier}
+
+The structure of the identifier used by the system to identify the entries is mainly composed of three parts which will be briefly explained in this section:
+
+\begin{tcolorbox}
+\textbf{Identifier Structure:} \textless Epoch, LeaderId, EntryId \textgreater
+\end{tcolorbox}
+
+\textit{Epoch} identifies the counter associated with the leader under which the entries are added. \textit{LeaderId} represents the identifier of the leader which is adding the entry in the system. Lastly, \textit{EntryId} represents the local entry identifier within the epoch. The entryid is a counter which gets incremented every time a leader adds an entry under a particular epoch in the system. The main purpose of \textit{incremental counter} is to provide \textit{monotonicity} within a \textit{leader unit}. The nodes based on the identifier of last pulled entry can deduce the identifier of next entry to fetch from the neighbors in the system.
+
+
+\subsection{Timeline Merge}
+
+As mentioned earlier, at any given moment in data center the router, network connection between the systems or the switches might be failing. It could easily result in an event of network partition in which a group of nodes might get separated and isolated from the other group. The system prototype is supposed to be highly available meaning that the system should function correctly in event of network partition.
+
+\par As it is not possible for the nodes to distinguish between the nodes getting partitioned or crashing, each group of nodes think that the nodes in the other group have crashed and they are ultimately removed from their view of system. The leader which was elected before the partition, keeps of functioning as the leader in one of the groups while the nodes in the other group realize about the death of their leader and start voting protocols to elect a new leader. Once a new leader gets elected, it chooses its own follower group and informs about the epoch under which it will be adding information in the system. In this way, the two groups keep on evolving separately without knowing about the presence of other group which is depicted in Figure \ref{fig:timelineMerge}.
+
+\par Usually, the network partitions are short lived but in case of long lived partition usually manual intervention is required during the partition merge for the nodes in one group to discover the nodes in other group. In order to merge the two partitions effectively the leader units that were added since the partition in both the branches needs to be identified and added to the leader along with follower group of the merged partition, which would be pulled by other nodes in the system. 
+
+\par The timeline abstraction keeps track of the leader units and the order in which these units were added in the system. During the partition merge, the units that were added in other partition can simply be added to the timeline without any conflicts. This is possible because of the dense identifier spaces created by these leader units as the units created in separate partitions can have same epoch and the max entries value but the leader identifier will be different as the a node can be a leader in only one of the partitions. 
+
 
 
 \section{Preference and Utility Function}
@@ -766,23 +790,34 @@ The total order achieved on the nodes using the utility function is used to assi
 \par The gradient topology constructs and maintains the overlay by forming links with a set a preferred nodes in the system. The gradient also selects a node from this set and exchange information regarding the change in the self utility and neighbors periodically. In order to decide the set of preferred nodes, gradient uses a \textit{Preference Function} which itself is based on the utility function. In the prototype developed as part of thesis, the preference function indicates that a node will have a higher preference to form link with the node having a utility higher but closer to a node's own utility. In case a node is unable to find nodes above itself in terms of utility it will form links with node that have a utility which is lower than self but closer to self. In order to better explain the statement, we assume that we have three peers having identifiers as A, B and C. Assuming the utility of a peer could be represented on an absolute scale as depicted in Figure \ref{fig:preference}, we can see that PeerB has the highest utility  followed by PeerA and then by PeerC. The preference function indicates that PeerC will have a higher probability of forming link with PeerA than with PeerB as even though both have utility greater than its own, PeerA has utility which is closer to utility of PeerC. \textit{Softmax} approach is being used with a \textit{low temperature} to identify the nodes that will be part of the neighborhood list resulting a greedy approach while creating the local view. Apart from this, gradient also uses the  preference function while selecting a node from the neighbor list to shuffle with from the local view. At this stage, the softmax approach with a \textit{higher temperature} is used to increase the range over which the node is selected for shuffling.
 
 
-\section{Pull Protocol}
+\section{Data Dissemination}
 \label{sec:pull}
 
-The whole system is managed by a small number of peers which are the leaders of different shards in the system. The protocol employed for election of leader is \textit{Leader Selection} which is explained in detail in section \ref{ssec:leaderElection}. The leader is responsible for taking decisions regarding addition or updation of entries in the shard. In order to make the system highly available and prevent a single point of failure, the leader replicates the decision over the follower group. Once the decision has been replicated to the follower group, the leader returns back a successful response to the client which initiated the operation. This decision needs to be disseminated to other nodes in the shard which can be achieved by either using a push protocol in which nodes send information to their neighbors or through a pull protocol, which is periodically executed by each node and asks for any updates from the nodes having higher utility. The push protocol seems lucrative because the nodes will push information to other nodes only when a new information gets available to them. It prevents the nodes from periodically requesting for any new information from the neighboring nodes and thus saving bandwidth. But there are major flaws in the push information scheme which are enumerated below:
+The whole system is managed by a small number of peers which are the leaders of different shards in the system. The protocol employed for election of leader is \textit{Leader Selection} which is explained in detail in section \ref{ssec:leaderElection}. The leader is responsible for taking decisions regarding addition or updation of entries in the shard. In order to make the system highly available and prevent a single point of failure, the leader replicates the decision over the follower group. Once the decision has been replicated to the follower group, the leader returns back a successful response to the client which initiated the operation. This decision needs to be disseminated to other nodes in the shard which can be achieved by either using a push protocol in which nodes send information to their neighbors or through a pull protocol, which is periodically executed by each node and asks for any updates from the nodes having higher utility or using a hybrid approach involving both push and pull protocols. The push protocol seems lucrative because the nodes will push information to other nodes only when a new information gets available to them. It prevents the nodes from periodically requesting for any new information from the neighboring nodes and thus saving bandwidth. But there are major flaws in the push information scheme which are enumerated below:
 
 \begin{enumerate}
 
-\item From the security point of view, the push protocol is vulnerable to the Byzantine node attack. In case a node gets compromised, it can start pushing junk data to other nodes.
-
+\item From the security point of view, the push protocol is vulnerable to the \textit{Byzantine node attack}. In case a node gets compromised, it can start pushing junk data to other nodes.
 
 \item As the system is dynamic, nodes can arrive and leave the system at any time. A simple push protocol, prevents the node just joining the system to get all the updates pushed by the nodes higher in the utility prior to its joining.
 
-\item A big flaw in using push protocol for the current prototype implementation is the way in which the preference function is defined. As mentioned earlier a particular node prefers node which higher but closer to itself in terms of utility. Therefore, given enough peers present above a particular node in terms of utility, that node will form all the neighborhood connections to the peers above itself. This tendency prevents nodes forming links with the peers on the edges of the shard i.e. the nodes having low utility. In absence of links, there is a high chance that the updates pushed by other nodes won't reach the nodes lower in the gradient.
+\item With the change in the utility, nodes move in the overlay by establishing connections to new nodes in the system. During this migration, it is possible that a particular node might loose updates that are being pushed by other nodes in the system.
 
 \end{enumerate}
 
-Therefore, when the information needs to be disseminated in whole of the system, a pull protocol is employed whereby every node periodically requests for the next decisions that are taken by the leader and not yet seen by the requesting node. Apart from this, the system involves the use of push protocol by the leader when the decision needs to be replicated to the follower group. The information gets pushed by the leader to the nodes in the follower group which gets pulled by the rest of the nodes in the system using a pull protocol. Even though we have briefly talked about information dissemination in this section, it is explained in detail in Section \ref{ssec:gossip}.
+Therefore, when the information needs to be disseminated in whole of the system, a pull protocol is employed whereby every node periodically requests the neighbors with higher utility, for the next decisions that are taken by the leader and not yet seen by the requesting node. Apart from this, the system involves the use of push protocol by the leader when the decision needs to be replicated to the follower group. The information gets pushed by the leader to the nodes in the follower group which gets pulled by the rest of the nodes in the system using a pull protocol. Even though we have briefly talked about information dissemination in this section, it is explained in detail in Section \ref{ssec:gossip}.
+
+\par Apart from this, in the system, knowledge regarding the leader unit is termed as \textit{Control Information} while the data added by the user is termed as \textit{Entry Information}. All the other nodes needs to periodically pull both the information from the nodes higher in utility using separate pull protocols which are briefly explained below:
+
+\begin{enumerate}
+
+\item[] \textbf{Control Pull Mechanism}: When a node joins system, it has no information regarding the leader units that have been added in the system. Therefore before a node starts pulling entry information, it needs to have information regarding the identifier of the entry which can be deduced using the information exposed by the leader units. The units pulled as part of this mechanism are added in the timeline abstraction of the node.
+
+\item[] \textbf{Index Pull Mechanism}: Once the control information is pulled by the node, the entry protocol mechanism is initiated to fetch the entries from the nodes with higher utility. Once the mechanism finishes pulling a particular unit, it switches to pulling of the entries added in the next in order leader unit. The entries pulled are dumped in the data store of the node.
+
+\end{enumerate}
+
+
 
 \section{Gossip Based Data Dissemination}
 \label{ssec:gossip}
@@ -797,7 +832,7 @@ As the system evolves, the leader receives request for adding new entries in the
 
 
 
-\subsection{Routing}
+\section{Routing}
 \label{ssec:routing}
 
 \par The client in order to look for the entries in the system generates a search request. The search request is then sent to the application running at the client node. The protocol of handling search request by the application involves locating the items matching the search request in the local data store. Once the matching items are located, necessary information is extracted from the items and response is generated to be sent back to the client.
