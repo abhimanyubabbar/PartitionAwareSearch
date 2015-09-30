@@ -331,14 +331,14 @@ Kompics \cite{kompics} is an \textit{Asynchronous Message Passing} framework whi
 In this section, we will briefly discuss the overlay network over which the system is built. The two main components used to construct the overlay network are as follows:
 
 \subsection{Sampling Service}
-\label{ssec:gossip}
+\label{ssec:sampling}
 
 In recent years, the large scale distributed systems have employed gossip based communication to achieve dissemination of information, overlay management, handle scalability, load balancing and churn management. Gossip based communication in turn is based on Peer Sampling Service\cite{samplingService} which aims to provide each node in the system a set of peers to exchange information with.  The sampling service provides each node with a uniform random sample of all the nodes in the system without having the knowledge of all the nodes. The random sample can be used by the node to send gossip messages to. The prototype developed as part of thesis, employs Croupier\cite{croupier} as its sampling service.
 
 
 \subsection{Structured Overlay}
 
-The sampling service introduced in section \ref{ssec:gossip} provides each node with a uniform random sample of all the nodes in the system. This sample is useful in gossip based communication but doesn't provide any help with identifying the direction for searching or locating information. This raises the need for the structured overlays\cite{tMan}\cite{sacha2006discovery} which are used for constructing and maintaining different class of topologies in P2P systems by arranging the nodes based on different ranking functions. As part of this thesis, Gradient\cite{sacha2006discovery} protocol, which is a class of structured P2P overlays forms the basis for constructing overlay topology of the system.
+The sampling service introduced in section \ref{ssec:sampling} provides each node with a uniform random sample of all the nodes in the system. This sample is useful in gossip based communication but doesn't provide any help with identifying the direction for searching or locating information. This raises the need for the structured overlays\cite{tMan}\cite{sacha2006discovery} which are used for constructing and maintaining different class of topologies in P2P systems by arranging the nodes based on different ranking functions. As part of this thesis, Gradient\cite{sacha2006discovery} protocol, which is a class of structured P2P overlays forms the basis for constructing overlay topology of the system.
 
 
 \section{Google Search}
@@ -816,7 +816,7 @@ The whole system is managed by a small number of peers which are the leaders of 
 
 \end{enumerate}
 
-Therefore, when the information needs to be disseminated in whole of the system, a pull protocol is employed whereby every node periodically requests the neighbors with higher utility, for the next decisions that are taken by the leader and not yet seen by the requesting node. Apart from this, the system involves the use of push protocol by the leader when the decision needs to be replicated to the follower group. The information gets pushed by the leader to the nodes in the follower group which gets pulled by the rest of the nodes in the system using a pull protocol. Even though we have briefly talked about information dissemination in this section, it is explained in detail in Section \ref{ssec:gossip}.
+Therefore, when the information needs to be disseminated in whole of the system, a pull protocol is employed whereby every node periodically requests the neighbors with higher utility, for the next decisions that are taken by the leader and not yet seen by the requesting node. Apart from this, the system involves the use of push protocol by the leader when the decision needs to be replicated to the follower group. The information gets pushed by the leader to the nodes in the follower group which gets pulled by the rest of the nodes in the system using a pull protocol.
 
 \par Apart from this, in the system, knowledge regarding the leader unit is termed as \textit{Control Information} while the data added by the user is termed as \textit{Entry Information}. All the other nodes needs to periodically pull both the information from the nodes higher in utility using separate pull protocols which are briefly explained below:
 
@@ -828,15 +828,7 @@ Therefore, when the information needs to be disseminated in whole of the system,
 
 \end{enumerate}
 
-
-
-\section{Gossip Based Data Dissemination}
-\label{ssec:gossip}
-Once a node becomes a leader, it is implicitly trusted by other members in the shard. Initially the information of a node becoming a leader is only published to the follower group which is chosen by the leader. This information then gets pulled by other peers in the system. In this situation, it might be very much possible that a Byzantine Node might start publishing wrong information to the peers during the pull protocol. In order to prevent this, a peer during the pull protocol, requests updates from a predefined configurable peers usually \textit{three} that are above itself in terms of utility.  The peers respond with the hashes of the information. Only the information for which the hashes match from all the nodes is then pulled from any one of the responding peers.
-\par This approach is being used for securely disseminating the leader information in the system. In addition to this, entry dissemination is also based on this protocol. We think that this approach is secure enough in the sense that it is highly unlikely for all the nodes that are requested by peer to provide updates that are faulty.
-
-
-
+When a node pulls information from its neighbors, it might be possible that a Byzantine Node might start publishing wrong information to it. To prevent this, a peer during the pull protocol, requests updates from a predefined configurable peers usually \textit{three} that are above itself in terms of utility.  The peers respond with the hashes of the information. Only the information for which the hashes match, is then pulled from any one of the responding peers. We think that this approach is secure enough in the sense that it is highly unlikely for all the nodes that are requested by peer, to provide updates that are faulty.
 
 
 \section{Routing}
@@ -886,13 +878,9 @@ As part of current implementation, the prototype supports the following operatio
 
 
 \section{Load Balancing}
-\label{sec:loadBalance}
+\label{sec:loadBalanceImpl}
 
-As the system evolves, the leader receives request for adding new entries in the system. Using basic replication strategies, the leader commits the entries to the leader group which then gets replicated to all the nodes in the shard using pull protocol. The system has a predefined \textit{MaxShardSize} parameter. When the entries grow beyond the count, the leader then initiates \textit{ShardSplit} protocol. As part of this protocol, each peer based on its identifier and its depth which is basically number of shard splits seen by the node, decides the next shard id.
-\par Before initiating the two phase commit of the shard split, the leader stops handling the entry additions. It then looks in its local lucene store and after sorting the entries based on their identifiers, calculates the split point. This meta information is then committed to the leader group nodes along with the shard split update as a part of two phase commit. Once the information is pulled by other peers in the system, based on their new shardId, they decide to remove all the entries either before or after the split point. The process of removing the entries in more detail when we introduce the concept of Leader Units and Timeline in section \ref{ssec:leaderUnit} and \ref{ssec:timeline} respectively. The peers then join the other peers in their respective shards.
-
-
-
+In this section, we will be briefly describing the implementation behind sharding protocol employed by system. The leader checks the size of the search index after each entry commit. In case the size grows beyond the bounded value, it initiates the sharding protocol. As part of the protocol, the leader commits the sharding update to the nodes in the follower group. Before it can initiate the two phase commit regarding the update, the leader stops handling the entry additions. It then looks in its local lucene store and after sorting the entries based on their identifiers, calculates the split point which is the midpoint of the sorted list. This meta information is then committed to the follower group nodes along with the shard split update as a part of two phase commit. The split point is just used to identify the leader unit which will actually act as a splitting point. Nodes in the system never remove the entries within leader unit instead they keep or remove whole of the leader units. In order to keep things simple, each node based on its new partition identifier after applying sharding update, identifies whether the leader units less than the split point needs to be removed or split point leader unit and higher needs to be removed.
 
 
 \section{T-Gradient}
@@ -915,9 +903,7 @@ The entry identifier used in the system is made up of \textit{Epoch, LeaderId, E
 \subsection{Leader Unit}
 \label{ssec:leaderUnit}
 
-A collection of entries added by a leader in a particular epoch is termed as a \textit{Leader Unit}. As part of the implementation, we define a threshold for the entries that can be added by a particular leader within a particular leader unit. In case of the threshold has been reached, the leader needs to perform a mandatory \textit{epoch switch} by incrementing the epoch and adding the entries from the start in that epoch.
-
-\par We limit the entries that a leader can add in an epoch to achieve a balanced load distribution in newly created partitions after sharding operation. As already explained in the section \ref{ssec:loadBalance}, during sharding phase, the leader calculates the split point identifier. It then performs a two phase commit over the follower group which gets pulled by other peers in the system. The split point is just used to identify the leader unit which will actually act as a splitting point. We never remove the entries within the leader unit instead we keep or remove whole of the leader units. In order to keep things simple, each node based on predefined bitwise manipulation algorithm identifies whether the leader units less than the split point needs to be removed or split point leader unit and higher needs to be removed. The minimum load on the system before the leader initiates sharding protocol is \textit{ X * Max Leader Unit Entries} where X is a configurable number.
+A collection of entries added by a leader in a particular epoch is termed as a \textit{Leader Unit}. As part of the implementation, we define a threshold for the entries known as \textit{MaxUnitEntries}, that can be added by a particular leader within a particular leader unit.  In case of the threshold has been reached, the leader needs to perform a mandatory \textit{epoch switch} by incrementing the epoch and adding the entries from the start in the new epoch. We limit the entries that a leader can add in an epoch to achieve a balanced load distribution in newly created partitions after sharding operation. The minimum load on the system before the leader initiates sharding protocol is \textit{ X * MaxUnitEntries} where X is an application defined configurable number.
 
 
 
