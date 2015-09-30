@@ -418,12 +418,12 @@ Solr \cite{solr} is an enterprise search server built by Apache allowing user to
 
 \begin{itemize}
 
-\item \textit{Peers}: The system is composed of nodes known as peers which basically are processes executed by the clients. The clients join the system by bootstrapping themselves with the already present peers in the system. The peers follow the Crash/ Stop process \cite{guerraoui} i.e a peer upon failure crashes and stops all communication with the other nodes.
+\item \textit{Peers}: The system is composed of nodes known as peers which basically are processes executed by the clients. The clients join the system by bootstrapping themselves with the already present peers in the system. The peers follow the Crash/ Stop process\cite{guerraoui} i.e a peer upon failure crashes and stops all communication with the other nodes.
 
 
-\item \textit{Communication Links}: As part of system design we assume the communication links between the peers to be fair-loss links \cite{guerraoui}. Therefore, the network only transfers the messages that are sent from the application and cannot create the messages on its own. In addition to this, we assume the network to be partially synchronous meaning there are times during which the network might have no upper bounds on transmission time or drop messages but eventually the network will become synchronous with upper bounds on the message transmission time.
+\item \textit{Communication Links}: As part of system design we assume the communication links between the peers to be fair-loss links\cite{guerraoui}. Therefore, the network only transfers the messages that are sent from the application and cannot create the messages on its own. In addition to this, we assume the network to be partially synchronous meaning there are times during which the network might have no upper bounds on transmission time or drop messages but eventually the network will become synchronous with upper bounds on the message transmission time.
 
-\item \textit{Overlay Network}: The system is built upon Gradient \cite{sacha2006discovery} which constructs an overlay based on the preference function. The preference function used for the application will be explained later in detail but in general it helps to identify the ranking of node as compared to others. The Gradient in turn is built upon a peer sampling service which provides random samples of the nodes in the cluster to the Gradient component for the construction of overlay.
+\item \textit{Overlay Network}: The system is built upon Gradient\cite{sacha2006discovery} which constructs an overlay based on the preference function. The preference function used for the application will be explained later in detail but in general it helps to identify the ranking of node as compared to others. The Gradient in turn is built upon a peer sampling service which provides random samples of the nodes in the cluster to the Gradient component for the construction of overlay.
 
 \end{itemize}
 
@@ -495,11 +495,11 @@ Each node in the system periodically executes the leader code shown in Algorithm
 \subsection{Utility Values}
 
 
-In this section we will be giving a brief introduction concerning the parameters used by the different nodes to calculate their utility. It is explained in greater depth in the Section {ref:utility}. The nodes arrange themselves in the overlay based on the utility, with the higher utility ones getting concentrated at the center of the system. The utility is decided based on following parts:
+In this section we will be giving a brief introduction concerning the parameters used by the different nodes to calculate their utility. It is explained in greater depth in the Section \ref{sec:utility}. The nodes arrange themselves in the overlay based on the utility, with the higher utility ones getting concentrated at the center of the system. The utility is decided based on following parts:
 
 \begin{itemize}
 
-\item \textbf{leaderGroupMembership}: boolean value indicating that the node is part of either a leader or part of follower group.  The check gets enabled when the node either gets elected as a leader or becomes a part of the follower group. This ensures that the follower group remains as the \textit{topK} nodes during the lease round as the nodes joining the system or already present will have the check being disabled. This check if enabled provides a boost to the utility of the node ensuring they remain at the center of the gradient.
+\item \textbf{leaderGroupMembership}: boolean value indicating that the node is part of either a leader or part of follower group.  The check gets enabled when the node either gets elected as a leader or becomes a part of the follower group. This ensures that the follower group remains as the \textit{topK} nodes as the nodes joining the system or already present will have the check being disabled. This check if enabled provides a boost to the utility of the node ensuring they remain at the center of the gradient.
 
 \item \textbf{replicationScore}: The decisions that are taken by the leader which have been replicated by a particular node.
 
@@ -822,7 +822,7 @@ Therefore, when the information needs to be disseminated in whole of the system,
 
 \begin{enumerate}
 
-\item[] \textbf{Control Pull Mechanism}: When a node joins system, it has no information regarding the leader units that have been added in the system. Therefore before a node starts pulling entry information, it needs to have information regarding the identifier of the entry which can be deduced using the information exposed by the leader units. The units pulled as part of this mechanism are added in the timeline abstraction of the node.
+\item[] \textbf{Control Pull Mechanism}: When a node joins system, it has no information regarding the leader units that have been added in the system. Therefore before a node starts pulling entry information, it needs to have information regarding the identifier of the entry which can be deduced using the information exposed by the leader units. The units pulled as part of this mechanism are added in the timeline abstraction of the peer.
 
 \item[] \textbf{Index Pull Mechanism}: Once the control information is pulled by the node, the entry protocol mechanism is initiated to fetch the entries from the nodes with higher utility. Once the mechanism finishes pulling a particular unit, it switches to pulling of the entries added in the next in order leader unit. The entries pulled are dumped in the data store of the node.
 
@@ -836,7 +836,7 @@ When a node pulls information from its neighbors, it might be possible that a By
 
 \par The client in order to look for the entries in the system generates a search request. The search request is then sent to the application running at the client node. The protocol of handling search request by the application involves locating the items matching the search request in the local data store. Once the matching items are located, necessary information is extracted from the items and response is generated to be sent back to the client.
 
-\par The above approach allows application to locate all the matching items in case all the data is located in the local data store. As part of load balancing protocol which explained in Section \ref{ssec:loadBalance}, the data gets distributed between the nodes in different shards. Now, it might be possible that the item that the client is looking for is located in other shards. Therefore, the application now needs to route the request to the nodes present in these shards. In order to do so, the application needs to have information about the shards and sample of nodes located in each shard. Therefore, each peer has a \textit{Routing} abstraction which keeps track of the shards in the system and sample of nodes inside each shard. The component periodically gets random set of samples from the peer sampling service. Each node sample contains information regarding the shard to which it belongs. Using this information, the component maps the node descriptor to the shard. Now, when the application receives a search request, it gets information about all the shards and a set of descriptors in each shard from its local map. The query is then sent in parallel to all the shards.
+\par The above approach allows application to locate all the matching items in case all the data is located in the local data store. As part of load balancing protocol which explained in Section \ref{ssec:loadBalance}, the data gets distributed between the nodes in different partitions. Now, it might be possible that the item that the client is looking for is located in other partition. Therefore, the application now needs to route the request to the nodes present in different partitions. In order to do so, the application needs to have information about the partitions and sample of nodes located in each partition. Therefore, each peer has a \textit{Routing} abstraction which keeps track of the partitions in the system and sample of nodes inside each partition. The component periodically gets random set of samples from the peer sampling service. Each node sample contains information regarding the partitions to which it belongs. Using this information, the component maps the node descriptor to the partitions. Now, when the application receives a search request, it gets information about all the shards and a set of descriptors in each shard from its local map. The query is then sent in parallel to all the partitions.
 
 
 
